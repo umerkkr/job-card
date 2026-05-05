@@ -14,7 +14,20 @@ const JOB_CARDS = [
   { id: 'cu-taping', label: 'CU Taping' },
 ];
 
-const DigitalJobCard = ({ onSelectJob, onCreateJob }: any) => {
+type JobData = {
+  jobName: string;
+  jobId: string;
+  machine: string;
+  process: string;
+  products: any[];
+};
+
+type Props = {
+  onCreateJob: (data: JobData) => void;
+  onSelectJob?: (id: string) => void;
+};
+
+const DigitalJobCard = ({ onCreateJob }: Props) => {
   const [activeTab, setActiveTab] = useState<"jobCard" | "supervisor">("jobCard");
 
   return (

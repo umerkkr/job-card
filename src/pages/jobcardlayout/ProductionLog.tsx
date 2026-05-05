@@ -10,7 +10,7 @@ import MeterStep from "../../components/steps/MeterStep";
 import ActionStep from "../../components/steps/ActionStep";
 import { getTimeDifference, tableHeaders } from "../../utils/helper/helper";
 
-const ProductionLog = ({ isUrdu }: any) => {
+const ProductionLog = ({  }: any) => {
   const [showModal, setShowModal] = useState(false);
   const [modalStep, setModalStep] = useState<
     "action" | "meter" | "drum" | "outputDrum" | "reason" | "changeDrum" | "meterFinish"

@@ -8,7 +8,17 @@ import InputLotTable from "../jobcardlayout/InputLotTable";
 import LayingDetailsTable from "../jobcardlayout/LayingDetailsTable";
 
 
-type Props = { onBack: () => void };
+type JobData = {
+  jobName: string;
+  jobId: string;
+  machine: string;
+  products: any[];
+};
+
+type Props = {
+  onBack: () => void;
+  data: JobData;
+};
 
 const LayingUp = ({ onBack }: Props) => {
   const [isUrdu, setIsUrdu] = useState(true);

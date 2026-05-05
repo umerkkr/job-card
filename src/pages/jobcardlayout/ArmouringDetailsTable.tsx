@@ -1,4 +1,4 @@
-const ArmouringDetailsTable = ({ isUrdu }: any) => {
+const ArmouringDetailsTable = ({  }: any) => {
   return (
     <table className="w-full border border-black border-collapse text-[11px] mb-2">
       <thead>

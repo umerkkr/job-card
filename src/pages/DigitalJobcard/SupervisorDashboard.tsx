@@ -12,6 +12,8 @@ const PROCESS_OPTIONS = [
   "Wire Drawing",
 ];
 
+
+
 const MACHINE_MAP: Record<string, string[]> = {
   Extrusion: ["150-1-Extruder", "150-2-Extruder", "CCV-LINE"],
   Armouring: ["Drum-Twister", "M1", "3200-D-T"],
@@ -49,7 +51,20 @@ const generateJobName = (process: string) => {
   return `${prefix}-${month}-${year}-${number}`;
 };
 
-export default function SupervisorDashboard() {
+type JobData = {
+  jobName: string;
+  jobId: string;
+  machine: string;
+  process: string;
+  products: any[];
+};
+
+type Props = {
+  onCreateJob: (data: JobData) => void;
+};
+
+
+export default function SupervisorDashboard({  }: Props){
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);

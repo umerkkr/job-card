@@ -1,4 +1,4 @@
-const RemarksSection = ({ isUrdu }: any) => {
+const RemarksSection = ({  }: any) => {
   return (
     <div className="flex border mt-2 text-[11px]">
       <div className="w-[80%] p-2 border-r leading-5">

@@ -7,7 +7,16 @@ import ExtrusionDetailsTable from "../jobcardlayout/ExtrusionDetailsTable";
 import SpecialRequirementsTable from "../jobcardlayout/SpecialRequirementsTable";
 import ExtrusionMachineTable from "../jobcardlayout/ExtrusionMachineTable";
 
-type Props = { onBack: () => void };
+type JobData = {
+  jobName: string;
+  jobId: string;
+  machine: string;
+  products: any[];
+};
+type Props = {
+  onBack: () => void;
+  data: JobData;
+};
 
 const Extrusion = ({ onBack }: Props) => {
   const [isUrdu, setIsUrdu] = useState(true);

@@ -71,7 +71,6 @@ const Armouring = ({ onBack }: any) => {
 
   return (
   <div className="max-w-[1200px] mx-auto">
-
     <button
       onClick={onBack}
       className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"

@@ -5,7 +5,6 @@ import InfoTable from "../jobcardlayout/InfoTable";
 import SpecialRequirementsTable from "../jobcardlayout/SpecialRequirementsTable";
 import InputLotTable from "../jobcardlayout/InputLotTable";
 import ProductionLog from "../jobcardlayout/ProductionLog";
-import RemarksSection from "../jobcardlayout/RemarksSection";
 import TapeDetailsTable from "../jobcardlayout/TapeDetails";
 import MachineTable from "../jobcardlayout/MachineTable";
 

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import JobCardLayout from "../DigitalJobcard/JobCardLayout";
 import MachineTable from "../jobcardlayout/MachineTable";
-import RemarksSection from "../jobcardlayout/RemarksSection";
 import SpecialRequirementsTable from "../jobcardlayout/SpecialRequirementsTable";
 import ProductionLog from "../jobcardlayout/ProductionLog";
 import InfoTable from "../jobcardlayout/InfoTable";

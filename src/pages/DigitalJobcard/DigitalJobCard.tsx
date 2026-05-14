@@ -2,6 +2,7 @@ import { useState } from "react";
 import SupervisorDashboard from "./SupervisorDashboard";
 
 const JOB_CARDS = [
+  
   { id: 'extrusion', label: 'Extrusion' },
   // { id: 'bunching', label: 'Bunching' },
   { id: 'laying-up', label: 'Laying Up' },

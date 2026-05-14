@@ -136,7 +136,7 @@ const ProductionLog = ({  }: any) => {
 
   return (
     <div className="p-4 ">
-      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+      <div className="flex justify-between items-center mb-6 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
         <h4 className="text-green-700 font-bold text-lg tracking-tight">
           PRODUCTION LOG
         </h4>

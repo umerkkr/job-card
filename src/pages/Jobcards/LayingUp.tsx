@@ -7,7 +7,6 @@ import LayingUpMachineTable from "../jobcardlayout/LayingUpMachineTable";
 import InputLotTable from "../jobcardlayout/InputLotTable";
 import LayingDetailsTable from "../jobcardlayout/LayingDetailsTable";
 
-
 type JobData = {
   jobName: string;
   jobId: string;
@@ -22,6 +21,9 @@ type Props = {
 
 const LayingUp = ({ onBack }: Props) => {
   const [isUrdu, setIsUrdu] = useState(true);
+
+  // COLLAPSIBLE STATE
+  const [open, setOpen] = useState(false);
 
   const t = (ur: string, en: string) => (isUrdu ? ur : en);
 
@@ -57,19 +59,47 @@ const LayingUp = ({ onBack }: Props) => {
         setIsUrdu={setIsUrdu}
         onBack={onBack}
       >
-        <InfoTable rows={rows} />
+        <div className="border border-black text-[11px]">
 
-        <LayingUpMachineTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE HEADER */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
+          >
+            <span>
+              {t("جاب کارڈ کی تفصیلات", "JOB CARD DETAILS")}
+            </span>
 
-        <InputLotTable isUrdu={isUrdu} />
+            <span
+              className={`transition-transform duration-300 ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          </button>
 
-        <LayingDetailsTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE CONTENT */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              open
+                ? "max-h-[5000px] opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <InfoTable rows={rows} />
 
-        <ProductionLog isUrdu={isUrdu} />
+            <LayingUpMachineTable isUrdu={isUrdu} />
 
-        <RemarksSection isUrdu={isUrdu} />
+            <InputLotTable isUrdu={isUrdu} />
+
+            <LayingDetailsTable isUrdu={isUrdu} />
+          </div>
+
+          <ProductionLog isUrdu={isUrdu} />
+
+        </div>
       </JobCardLayout>
-
     </div>
   );
 };

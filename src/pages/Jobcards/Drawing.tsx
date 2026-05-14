@@ -88,7 +88,6 @@ const WireDrawing = ({ onBack }: any) => {
               </tbody>
             </table>
 
-            {/* MACHINE TABLE */}
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100">

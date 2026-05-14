@@ -13,6 +13,7 @@ type JobData = {
   machine: string;
   products: any[];
 };
+
 type Props = {
   onBack: () => void;
   data: JobData;
@@ -20,6 +21,9 @@ type Props = {
 
 const Extrusion = ({ onBack }: Props) => {
   const [isUrdu, setIsUrdu] = useState(true);
+
+  // COLLAPSIBLE STATE
+  const [open, setOpen] = useState(false);
 
   const t = (ur: string, en: string) => (isUrdu ? ur : en);
 
@@ -41,32 +45,59 @@ const Extrusion = ({ onBack }: Props) => {
   ];
 
   return (
-     <div className="max-w-[1200px] mx-auto">
+    <div className="max-w-[1200px] mx-auto">
+      <button
+        onClick={onBack}
+        className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+      >
+        ← Back
+      </button>
 
-    <button
-      onClick={onBack}
-      className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-    >
-      ← Back
-    </button>
+      <JobCardLayout
+        title={t("ایکسٹروژن", "EXTRUSION")}
+        isUrdu={isUrdu}
+        setIsUrdu={setIsUrdu}
+        onBack={onBack}
+      >
+        <div className="border border-black text-[11px]">
+          
+          {/* COLLAPSIBLE HEADER */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
+          >
+            <span>
+              {t("جاب کارڈ کی تفصیلات", "JOB CARD DETAILS")}
+            </span>
 
-    <JobCardLayout
-      title={t("ایکسٹروژن", "EXTRUSION")}
-      isUrdu={isUrdu}
-      setIsUrdu={setIsUrdu}
-      onBack={onBack}
-    >
-      <InfoTable rows={rows} />
+            <span
+              className={`transition-transform duration-300 ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          </button>
 
-      <ExtrusionMachineTable isUrdu={isUrdu} />
-      <SpecialRequirementsTable isUrdu={isUrdu} />
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              open
+                ? "max-h-[5000px] opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <InfoTable rows={rows} />
 
-      <ExtrusionDetailsTable isUrdu={isUrdu} />
+            <ExtrusionMachineTable isUrdu={isUrdu} />
 
-      <ProductionLog isUrdu={isUrdu} />
+            <SpecialRequirementsTable isUrdu={isUrdu} />
 
-      <RemarksSection isUrdu={isUrdu} />
-    </JobCardLayout>
+            <ExtrusionDetailsTable isUrdu={isUrdu} />
+          </div>
+
+          <ProductionLog isUrdu={isUrdu} />
+        </div>
+      </JobCardLayout>
     </div>
   );
 };

@@ -12,6 +12,9 @@ import MachineTable from "../jobcardlayout/MachineTable";
 const CuTaping = ({ onBack }: any) => {
   const [isUrdu, setIsUrdu] = useState(true);
 
+  // COLLAPSIBLE STATE
+  const [open, setOpen] = useState(false);
+
   const rows = [
     [
       { content: isUrdu ? "ورک آرڈر نمبر" : "Work Order No" },
@@ -41,27 +44,58 @@ const CuTaping = ({ onBack }: any) => {
       >
         ← Back
       </button>
+
       <JobCardLayout
         title="CU TAPING"
         jobId="cu-taping"
         isUrdu={isUrdu}
         setIsUrdu={setIsUrdu}
       >
-        <InfoTable rows={rows} />
+        <div className="border border-black text-[11px]">
 
-        <MachineTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE HEADER */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
+          >
+            <span>
+              {isUrdu
+                ? "جاب کارڈ کی تفصیلات"
+                : "JOB CARD DETAILS"}
+            </span>
 
-        <SpecialRequirementsTable isUrdu={isUrdu} />
+            <span
+              className={`transition-transform duration-300 ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          </button>
 
-        <InputLotTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE CONTENT */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              open
+                ? "max-h-[5000px] opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <InfoTable rows={rows} />
 
-        <TapeDetailsTable isUrdu={isUrdu} />
+            <MachineTable isUrdu={isUrdu} />
 
-        <ProductionLog isUrdu={isUrdu} />
+            <SpecialRequirementsTable isUrdu={isUrdu} />
 
-        <RemarksSection isUrdu={isUrdu} />
+            <InputLotTable isUrdu={isUrdu} />
+
+            <TapeDetailsTable isUrdu={isUrdu} />
+          </div>
+
+          {/* ALWAYS VISIBLE */}
+          <ProductionLog isUrdu={isUrdu} />
+        </div>
       </JobCardLayout>
-
     </div>
   );
 };

@@ -9,7 +9,10 @@ import InputLotTable from "../jobcardlayout/InputLotTable";
 import ArmouringDetailsTable from "../jobcardlayout/ArmouringDetailsTable";
 
 const Armouring = ({ onBack }: any) => {
-  const [isUrdu, setIsUrdu] = useState(true);  
+  const [isUrdu, setIsUrdu] = useState(true);
+
+  // COLLAPSIBLE STATE
+  const [open, setOpen] = useState(false);
 
   const getRows = () => [
     [
@@ -70,37 +73,68 @@ const Armouring = ({ onBack }: any) => {
   ];
 
   return (
-  <div className="max-w-[1200px] mx-auto">
-    <button
-      onClick={onBack}
-      className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-    >
-      ← Back
-    </button>
+    <div className="max-w-[1200px] mx-auto">
+      <button
+        onClick={onBack}
+        className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+      >
+        ← Back
+      </button>
 
-    <JobCardLayout
-  title="ARMOURING"
-  jobId="armouring"
-  isUrdu={isUrdu}
-  setIsUrdu={setIsUrdu}
->
-  <InfoTable rows={getRows()} />
+      <JobCardLayout
+        title="ARMOURING"
+        jobId="armouring"
+        isUrdu={isUrdu}
+        setIsUrdu={setIsUrdu}
+      >
+        <div className="border border-black text-[11px]">
 
-  <MachineTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE HEADER */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
+          >
+            <span>
+              {isUrdu
+                ? "جاب کارڈ کی تفصیلات"
+                : "JOB CARD DETAILS"}
+            </span>
 
-  <SpecialRequirementsTable isUrdu={isUrdu} />
+            <span
+              className={`transition-transform duration-300 ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          </button>
 
-  <InputLotTable isUrdu={isUrdu} />
+          {/* COLLAPSIBLE CONTENT */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              open
+                ? "max-h-[5000px] opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <InfoTable rows={getRows()} />
 
-  <ArmouringDetailsTable isUrdu={isUrdu} />
+            <MachineTable isUrdu={isUrdu} />
 
-  <ProductionLog isUrdu={isUrdu} />
+            <SpecialRequirementsTable isUrdu={isUrdu} />
 
-  <RemarksSection isUrdu={isUrdu} />
-</JobCardLayout>
+            <InputLotTable isUrdu={isUrdu} />
 
-  </div>
-);
+            <ArmouringDetailsTable isUrdu={isUrdu} />
+          </div>
+
+          {/* ALWAYS VISIBLE */}
+          <ProductionLog isUrdu={isUrdu} />
+
+        </div>
+      </JobCardLayout>
+    </div>
+  );
 };
 
 export default Armouring;

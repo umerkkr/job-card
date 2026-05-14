@@ -5,7 +5,7 @@ import ProductionLog from "../jobcardlayout/ProductionLog";
 const WireDrawing = ({ onBack }: any) => {
   const [isUrdu, setIsUrdu] = useState(false);
 
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="max-w-[1200px] mx-auto">

@@ -4,7 +4,6 @@ import BunchingCarriageTable from "../jobcardlayout/BunchingCarriageTable";
 import InfoTable from "../jobcardlayout/InfoTable";
 import MachineTable from "../jobcardlayout/MachineTable";
 import ProductionLog from "../jobcardlayout/ProductionLog";
-import RemarksSection from "../jobcardlayout/RemarksSection";
 
 const Bunching = ({ onBack }: any) => {
   const [isUrdu, setIsUrdu] = useState(true);
@@ -30,7 +29,6 @@ const Bunching = ({ onBack }: any) => {
       <MachineTable isUrdu={isUrdu} />
       <BunchingCarriageTable isUrdu={isUrdu} />
       <ProductionLog isUrdu={isUrdu} />
-      <RemarksSection isUrdu={isUrdu} />
     </JobCardLayout>
     </div>
   );

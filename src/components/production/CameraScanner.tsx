@@ -10,8 +10,14 @@ const CameraScanner = ({ webcamRef, onCapture, onClose }: any) => {
         className="rounded-xl"
       />
       <button
-        onClick={onCapture}
-        className="w-full bg-green-600 text-white py-2 rounded-lg"
+        onClick={() => {
+          const randomCode = `DRM-${Math.floor(
+            1000 + Math.random() * 9000
+          )}`;
+
+          onCapture(randomCode);
+        }}
+        className="w-full bg-green-700 text-white py-3 rounded-xl text-lg font-bold"
       >
         Capture
       </button>

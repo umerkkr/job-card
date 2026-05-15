@@ -10,7 +10,7 @@ declare global {
 const VoiceComponent = ({ isUrdu }: { isUrdu: boolean }) => {
   const [voiceText, setVoiceText] = useState("");
   const [isListening, setIsListening] = useState(false);
-  
+  const [instructions, setInstructions] = useState<string[]>([]);
   const recognitionRef = useRef<any>(null);
   const timeoutRef = useRef<any>(null);
   // This Ref keeps track of "confirmed" text so it doesn't duplicate
@@ -64,10 +64,16 @@ const VoiceComponent = ({ isUrdu }: { isUrdu: boolean }) => {
   };
 
   const stopListening = () => {
-    recognitionRef.current?.stop();
-    setIsListening(false);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  };
+  recognitionRef.current?.stop();
+  setIsListening(false);
+
+  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+  // Save instruction into array
+  if (voiceText.trim() !== "") {
+    setInstructions((prev) => [...prev, voiceText.trim()]);
+  }
+};
 
   const handleVoiceToggle = () => {
     if (!isListening) startListening();
@@ -110,15 +116,38 @@ const VoiceComponent = ({ isUrdu }: { isUrdu: boolean }) => {
         </button>
       </div>
       
-      {/* Tiny Status Text */}
-      <div className="flex justify-between px-1 mt-1">
-        <span className="text-[10px] text-gray-400 italic">
-          {isListening ? (isUrdu ? "ریکارڈنگ..." : "Listening...") : ""}
-        </span>
-        <span className="text-[10px] text-gray-400">
-          {isUrdu ? "زیادہ سے زیادہ 15 سیکنڈ" : "Max 15 sec"}
-        </span>
+<div className="flex justify-between px-1 mt-1">
+  <span className="text-[10px] text-gray-400 italic">
+    {isListening ? (isUrdu ? "ریکارڈنگ..." : "Listening...") : ""}
+  </span>
+
+  <span className="text-[10px] text-gray-400">
+    {isUrdu ? "زیادہ سے زیادہ 15 سیکنڈ" : "Max 15 sec"}
+  </span>
+</div>
+
+{/* Instructions List */}
+{instructions.length > 0 && (
+  <div className="mt-3 space-y-2">
+    
+    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      {isUrdu ? "ریکارڈ شدہ ہدایات" : "Recorded Instructions"}
+    </div>
+
+    {instructions.map((instruction, index) => (
+      <div
+        key={index}
+        className="p-3 rounded-lg border border-gray-200 bg-gray-50 text-sm font-medium text-gray-700"
+      >
+        
+
+        <div className={isUrdu ? "text-right" : "text-left"}>
+          {instruction}
+        </div>
       </div>
+    ))}
+  </div>
+)}
     </div>
   );
 };

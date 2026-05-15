@@ -136,7 +136,7 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    2000 m
+                    500 m
                   </td>
 
                   <td className="border border-black p-2 text-center">

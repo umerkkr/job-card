@@ -1,4 +1,3 @@
-import RemarksSection from "../jobcardlayout/RemarksSection";
 import VoiceComponent from "../jobcardlayout/Instructions";
 
 const JobCardLayout = ({ title, children, isUrdu, setIsUrdu }: any) => {
@@ -21,7 +20,7 @@ const JobCardLayout = ({ title, children, isUrdu, setIsUrdu }: any) => {
         </button>
 
         <div className="font-bold">
-          {isUrdu ? "آپریشنل ڈیش بورڈ" : "Operational Dashboard"}
+          {/* {isUrdu ? "آپریشنل ڈیش بورڈ" : "Operational Dashboard"} */}
         </div>
       </div>
 
@@ -41,7 +40,6 @@ const JobCardLayout = ({ title, children, isUrdu, setIsUrdu }: any) => {
       </div>
       {children}
       <VoiceComponent isUrdu={isUrdu} />
-        <RemarksSection isUrdu={isUrdu} />
     </div>
   );
 };

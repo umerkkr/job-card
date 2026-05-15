@@ -7,12 +7,9 @@ const ChangeDrumStep = ({ changeDrumData, setChangeDrumData, onSave }: any) => {
   return (
     <div className="space-y-5">
       <div className="border-b pb-3">
-        <h3 className="text-xl font-bold text-gray-800">
-          Drum Transition
-        </h3>
-        <p className="text-xs text-gray-500 uppercase tracking-wider">
-          Update Drum Details
-        </p>
+        <p className="text-lg text-black font-medium">
+  Update Drum Details
+</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -42,12 +39,24 @@ const ChangeDrumStep = ({ changeDrumData, setChangeDrumData, onSave }: any) => {
       </div>
 
       <button
-        onClick={onSave}
-        className="w-full py-3 rounded-xl font-bold text-white 
-        bg-blue-600 hover:bg-blue-700 transition"
-      >
-        Save Drum Data
-      </button>
+  onClick={onSave}
+  className="
+    w-full
+    py-4
+    rounded-2xl
+    text-xl
+    font-bold
+    text-white
+    bg-green-700
+    hover:bg-green-800
+    shadow-md
+    transition-all
+    duration-200
+    cursor-pointer
+  "
+>
+  Save Drum Data
+</button>
     </div>
   );
 };

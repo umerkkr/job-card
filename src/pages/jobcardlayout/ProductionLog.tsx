@@ -1,248 +1,481 @@
 import { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Tesseract from "tesseract.js";
+
 import ChangeDrumStep from "../../components/steps/ChangeDrumStep";
 import MeterFinishStep from "../../components/steps/MeterFinishStep";
 import ReasonStep from "../../components/steps/ReasonStep";
 import OutputDrumStep from "../../components/steps/OutputDrumStep";
 import InputDrumStep from "../../components/steps/InputDrumStep";
-import MeterStep from "../../components/steps/MeterStep";
-import ActionStep from "../../components/steps/ActionStep";
-import { getTimeDifference, tableHeaders } from "../../utils/helper/helper";
 
-const ProductionLog = ({  }: any) => {
-  const [showModal, setShowModal] = useState(false);
-  const [modalStep, setModalStep] = useState<
-    "action" | "meter" | "drum" | "outputDrum" | "reason" | "changeDrum" | "meterFinish"
-  >("action");
+import {
+  getTimeDifference,
+  tableHeaders,
+} from "../../utils/helper/helper";
 
-  const webcamRef = useRef<Webcam | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
-  const [scanTarget, setScanTarget] = useState<"input" | "output" | null>(null);
+const ProductionLog = ({}: any) => {
+  const [showModal, setShowModal] =
+    useState(false);
 
-  const [isSettingRunning, setIsSettingRunning] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [meterFinish, setMeterFinish] = useState(0);
-  const [outputDrum, setOutputDrum] = useState("");
-  const [rows, setRows] = useState<any[]>([]);
-  const [currentRow, setCurrentRow] = useState(0);
-  const [meterReading, setMeterReading] = useState(0);
-  const [inputDrum, setInputDrum] = useState("");
-  const [stopReason, setStopReason] = useState("");
+  const [modalStep, setModalStep] =
+    useState<
+      | "action"
+      | "drum"
+      | "outputDrum"
+      | "reason"
+      | "changeDrum"
+      | "meterFinish"
+    >("action");
 
-  const [changeDrumData, setChangeDrumData] = useState({
-    contextVal: "",
-    unitType: "",
-    drumType: "",
-    drumNumber: "",
-    drumSize: "",
-    lengthPerUnit: "",
-    destOrg: "",
-    destDept: "",
-    advisedQty: "",
-    offerToQC: "",
-    packingLength: "",
-    noOfPacking: "",
-    shortExcess: "",
-    shortReason: "",
-  });
+  const webcamRef =
+    useRef<Webcam | null>(null);
 
+  const [showCamera, setShowCamera] =
+    useState(false);
+
+  const [scanTarget, setScanTarget] =
+    useState<
+      "input" | "output" | null
+    >(null);
+
+  const [isSettingRunning, setIsSettingRunning] =
+    useState(false);
+
+  const [isRunning, setIsRunning] =
+    useState(false);
+
+  const [isResumeJob, setIsResumeJob] =
+    useState(false);
+
+  const [rows, setRows] = useState<any[]>(
+    []
+  );
+
+  const [currentRow, setCurrentRow] =
+    useState(0);
+
+  const [inputDrums, setInputDrums] =
+    useState<string[]>([]);
+
+  const [outputDrums, setoutputDrums] =
+    useState<string[]>([]);
+
+  const [stopReason, setStopReason] =
+    useState("");
+
+  const [meterFinish, setMeterFinish] =
+    useState(0);
+
+  const [changeDrumData, setChangeDrumData] =
+    useState({
+      drumType: "",
+      drumNumber: "",
+      drumSize: "",
+      lengthPerUnit: "",
+      destDept: "",
+      advisedQty: "",
+      packingLength: "",
+      noOfPacking: "",
+      shortExcess: "",
+      shortReason: "",
+    });
+
+  // START SETTING
   const handleStartSetting = () => {
-    const time = new Date().toLocaleTimeString();
+    setIsResumeJob(false);
+
+    const time =
+      new Date().toLocaleTimeString();
+
     const newRow = {
       settingStart: time,
       settingFinish: "",
       runningStart: "",
       runningFinish: "",
       totalOutput: 0,
-      meterFinish: "",
-      reason: "",
+
+      // START METER AUTO 0
       meter: 0,
-      outputDrum: "",
-      inputDrum: "",
+
+      meterFinish: "",
+
+      reason: "",
+
+      outputDrums: [],
+
+      inputDrums: [],
     };
+
     setRows((prev) => {
-      const updated = [...prev, newRow];
-      setCurrentRow(updated.length - 1);
+      const updated = [...prev];
+
+      updated.push(newRow);
+
+      setCurrentRow(
+        updated.length - 1
+      );
+
       return updated;
     });
+
     setIsSettingRunning(true);
-    setShowModal(false);
   };
+
+  // OCR CAPTURE
   const capture = async () => {
     if (!webcamRef.current) return;
 
-    const imageSrc = webcamRef.current.getScreenshot();
+    const imageSrc =
+      webcamRef.current.getScreenshot();
+
     if (!imageSrc) return;
 
     try {
-      const result = await Tesseract.recognize(imageSrc, "eng");
+      const result =
+        await Tesseract.recognize(
+          imageSrc,
+          "eng"
+        );
 
       let text = result.data.text;
 
-      console.log("RAW OCR:", text);
-
       const cleaned = text
         .replace(/\s/g, "")
-        .replace(/[^A-Z0-9-]/gi, "");
-
-      console.log("CLEANED OCR:", cleaned);
+        .replace(
+          /[^A-Z0-9-]/gi,
+          ""
+        );
 
       if (scanTarget === "input") {
-        setInputDrum(cleaned);
-      } else if (scanTarget === "output") {
-        setOutputDrum(cleaned);
-      }
+        setInputDrums((prev) => {
+          if (prev.includes(cleaned)) {
+            return prev;
+          }
 
+          return [...prev, cleaned];
+        });
+      } else if (
+        scanTarget === "output"
+      ) {
+        setoutputDrums((prev) => {
+          if (prev.includes(cleaned)) {
+            return prev;
+          }
+
+          return [...prev, cleaned];
+        });
+      }
     } catch (err) {
-      console.error("OCR Error:", err);
+      console.error(
+        "OCR Error:",
+        err
+      );
     }
 
     setShowCamera(false);
   };
 
+  // STOP SETTING
   const handleStopSetting = () => {
-    const finishTime = new Date().toLocaleTimeString();
+    const finishTime =
+      new Date().toLocaleTimeString();
+
     setRows((prev) => {
       const updated = [...prev];
-      updated[currentRow].settingFinish = finishTime;
+
+      updated[
+        currentRow
+      ].settingFinish = finishTime;
+
+      updated[currentRow].meter = 0;
+
       return updated;
     });
+
     setIsSettingRunning(false);
-    setMeterReading(0);
-    setModalStep("meter");
+
+    // OPEN INPUT DRUM
+    setModalStep("drum");
+
     setShowModal(true);
   };
 
-  const handleNext = () => {
+  // RESUME JOB
+  const handleResumeJob = () => {
+    setIsResumeJob(true);
+
+    const previousRow =
+      rows[rows.length - 1];
+
+    const startTime =
+      new Date().toLocaleTimeString();
+
+    const newRow = {
+      // NO SETTING TIME
+      settingStart: "",
+      settingFinish: "",
+
+      runningStart: startTime,
+
+      runningFinish: "",
+
+      totalOutput: 0,
+
+      // PREVIOUS FINISH = NEW START
+      meter:
+        previousRow?.meterFinish || 0,
+
+      meterFinish: "",
+
+      reason: "",
+
+      // AUTO USE PREVIOUS DRUMS
+      outputDrums:
+        previousRow?.outputDrums ||
+        [],
+
+      inputDrums:
+        previousRow?.inputDrums ||
+        [],
+    };
+
     setRows((prev) => {
       const updated = [...prev];
-      updated[currentRow].meter = meterReading;
+
+      updated.push(newRow);
+
+      setCurrentRow(
+        updated.length - 1
+      );
+
       return updated;
     });
-    setModalStep("drum");
+
+    setIsRunning(true);
   };
 
-  const handleDrumSelect = (drum: string) => {
-    const runTime = new Date().toLocaleTimeString();
+  // INPUT DRUM SELECT
+  const handleDrumSelect = (
+    drums: string[]
+  ) => {
+    const runTime =
+      new Date().toLocaleTimeString();
+
     setRows((prev) => {
       const updated = [...prev];
-      updated[currentRow].inputDrum = drum;
-      updated[currentRow].runningStart = runTime;
+
+      updated[
+        currentRow
+      ].inputDrums = drums;
+
+      updated[
+        currentRow
+      ].runningStart = runTime;
+
       return updated;
     });
-    setModalStep("outputDrum");
+
+    setIsRunning(true);
+
+    setShowModal(false);
+
+    setModalStep("action");
   };
+  console.log(outputDrums)
 
   return (
     <div className="p-2 ">
-      
-
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-200">
             <div className="p-6">
-              {modalStep === "action" && (
-                <ActionStep
-                  onStartSetting={handleStartSetting}
-                  onStartMachine={() => setShowModal(false)}
-                />
-              )}
-
-              {modalStep === "meter" && (
-                <MeterStep
-                  meterReading={meterReading}
-                  setMeterReading={setMeterReading}
-                  onNext={handleNext}
-                />
-              )}
-
+              {/* INPUT DRUM */}
               {modalStep === "drum" && (
                 <InputDrumStep
                   showCamera={showCamera}
                   webcamRef={webcamRef}
                   capture={capture}
-                  setShowCamera={setShowCamera}
-                  setScanTarget={setScanTarget}
-                  inputDrum={inputDrum}
-                  setInputDrum={setInputDrum}
-                  handleDrumSelect={handleDrumSelect}
+                  setShowCamera={
+                    setShowCamera
+                  }
+                  setScanTarget={
+                    setScanTarget
+                  }
+                  inputDrums={
+                    inputDrums
+                  }
+                  setInputDrums={
+                    setInputDrums
+                  }
+                  handleDrumSelect={
+                    handleDrumSelect
+                  }
                 />
               )}
 
-              {modalStep === "outputDrum" && (
+              {/* OUTPUT DRUM */}
+              {modalStep ===
+                "outputDrum" && (
                 <OutputDrumStep
                   showCamera={showCamera}
                   webcamRef={webcamRef}
-                  capture={capture}
-                  setShowCamera={setShowCamera}
-                  setScanTarget={setScanTarget}
-                  outputDrum={outputDrum}
-                  setOutputDrum={setOutputDrum}
-                  onConfirm={() => {
+                  setShowCamera={
+                    setShowCamera
+                  }
+                  setScanTarget={
+                    setScanTarget
+                  }
+                  handleOutputDrumSelect={(
+                    drums: string[]
+                  ) => {
                     setRows((prev) => {
-                      const updated = [...prev];
-                      updated[currentRow].outputDrum = outputDrum;
+                      const updated = [
+                        ...prev,
+                      ];
+
+                      updated[
+                        currentRow
+                      ].outputDrums =
+                        drums;
+
                       return updated;
                     });
-                    setIsRunning(true);
-                    setShowModal(false);
-                    setModalStep("action");
+
+                    // OPEN FINISH METER
+                    setModalStep(
+                      "meterFinish"
+                    );
                   }}
                 />
               )}
 
-              {modalStep === "reason" && (
+              {/* REASON */}
+              {modalStep ===
+                "reason" && (
                 <ReasonStep
-                  stopReason={stopReason}
-                  setStopReason={setStopReason}
+                  stopReason={
+                    stopReason
+                  }
+                  setStopReason={
+                    setStopReason
+                  }
                   onConfirm={() => {
-                    if (stopReason === "Change Drum") {
-                      setModalStep("changeDrum");
+                    const finishTime =
+                      new Date().toLocaleTimeString();
+
+                    setRows((prev) => {
+                      const updated = [
+                        ...prev,
+                      ];
+
+                      updated[
+                        currentRow
+                      ].runningFinish =
+                        finishTime;
+
+                      updated[
+                        currentRow
+                      ].reason =
+                        stopReason;
+
+                      return updated;
+                    });
+
+                    // RESUME JOB
+                    // SKIP OUTPUT DRUM
+                    if (
+                      isResumeJob
+                    ) {
+                      setModalStep(
+                        "meterFinish"
+                      );
                     } else {
-                      const finishTime = new Date().toLocaleTimeString();
-                      setRows((prev) => {
-                        const updated = [...prev];
-                        updated[currentRow].runningFinish = finishTime;
-                        updated[currentRow].reason = stopReason;
-                        return updated;
-                      });
-                      setModalStep("meterFinish");
+                      setModalStep(
+                        "outputDrum"
+                      );
                     }
                   }}
                 />
               )}
 
-              {modalStep === "meterFinish" && (
+              {/* FINISH METER */}
+              {modalStep ===
+                "meterFinish" && (
                 <MeterFinishStep
-                  meterFinish={meterFinish}
-                  setMeterFinish={setMeterFinish}
+                  meterFinish={
+                    meterFinish
+                  }
+                  setMeterFinish={
+                    setMeterFinish
+                  }
                   onSave={() => {
                     setRows((prev) => {
-                      const updated = [...prev];
-                      updated[currentRow].meterFinish = meterFinish;
+                      const updated = [
+                        ...prev,
+                      ];
+
+                      updated[
+                        currentRow
+                      ].meterFinish =
+                        meterFinish;
+
                       return updated;
                     });
+
+                    // RESET
+                    setInputDrums([]);
+
+                    setoutputDrums([]);
+
+                    setStopReason("");
+
+                    setMeterFinish(0);
+
                     setIsRunning(false);
+
                     setShowModal(false);
-                    setModalStep("action");
+
+                    setModalStep(
+                      "action"
+                    );
                   }}
                 />
               )}
 
-              {modalStep === "changeDrum" && (
+              {/* CHANGE DRUM */}
+              {modalStep ===
+                "changeDrum" && (
                 <ChangeDrumStep
-                  changeDrumData={changeDrumData}
-                  setChangeDrumData={setChangeDrumData}
+                  changeDrumData={
+                    changeDrumData
+                  }
+                  setChangeDrumData={
+                    setChangeDrumData
+                  }
                   onSave={() => {
-                    const finishTime = new Date().toLocaleTimeString();
+                    const finishTime =
+                      new Date().toLocaleTimeString();
+
                     setRows((prev) => {
-                      const updated = [...prev];
-                      updated[currentRow].runningFinish = finishTime;
-                      updated[currentRow].reason = "Change Drum";
+                      const updated = [
+                        ...prev,
+                      ];
+
+                      updated[
+                        currentRow
+                      ].runningFinish =
+                        finishTime;
+
+                      updated[
+                        currentRow
+                      ].reason =
+                        "Change Drum";
+
                       return updated;
                     });
-                    setModalStep("meterFinish");
+
+                    setShowModal(false);
                   }}
                 />
               )}
@@ -250,96 +483,440 @@ const ProductionLog = ({  }: any) => {
           </div>
         </div>
       )}
+
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-2">
-      <h4 className="text-green-700 font-bold text-lg tracking-tight">
+        <h4 className="text-green-700 font-bold text-lg tracking-tight">
           PRODUCTION LOG
         </h4>
 
         <button
           onClick={() => {
-            if (isSettingRunning) return handleStopSetting();
+            // STOP SETTING
+            if (
+              isSettingRunning
+            ) {
+              return handleStopSetting();
+            }
+
+            // STOP JOB
             if (isRunning) {
-              setModalStep("reason");
+              setModalStep(
+                "reason"
+              );
+
               setShowModal(true);
+
               return;
             }
-            setShowModal(true);
-          }}
-          className={`px-6 py-2 rounded-full text-sm font-bold transition-all transform active:scale-95 shadow-md ${isSettingRunning
-            ? "bg-red-500 hover:bg-red-600 text-white"
-            : isRunning
-              ? "bg-amber-500 hover:bg-amber-600 text-white"
-              : "bg-green-600 hover:bg-green-700 text-white"
-            }`}
-        >
-          {isSettingRunning ? "Stop Setting Time" : isRunning ? "Stop Job" : "Start New Entry"}
-        </button>
-        </div>
-      <div className="overflow-x-auto  shadow-sm bg-white">
 
-        <table className="w-full text-[11px] border-collapse">
-          <thead className="bg-green-800 text-white uppercase tracking-tighter">
+            // FIRST JOB
+            if (
+              rows.length === 0
+            ) {
+              handleStartSetting();
+
+              return;
+            }
+
+            // RESUME JOB
+            handleResumeJob();
+          }}
+          className={`px-6 py-2 rounded-full text-sm font-bold transition-all transform active:scale-95 shadow-md ${
+            isSettingRunning
+              ? "bg-red-500 hover:bg-red-600 text-white"
+              : isRunning
+              ? "bg-amber-500 hover:bg-amber-600 text-white"
+              : "bg-green-700 hover:bg-green-700 text-white"
+          }`}
+        >
+          {isSettingRunning
+            ? "Stop Setting Time"
+            : isRunning
+            ? "Stop Job"
+            : rows.length === 0
+            ? "Setup Time"
+            : "Resume Job"}
+        </button>
+      </div>
+
+      {/* TABLE */}
+      <div className="overflow-x-auto shadow-sm bg-white">
+        <table className="w-full text-[12px] border-collapse">
+          <thead className="bg-green-700 text-white ">
             <tr>
-              {tableHeaders.map((header, i) => (
-                <th
-                  key={i}
-                  rowSpan={header.rowSpan}
-                  colSpan={header.colSpan}
-                  className="p-2 border border-slate-700"
-                >
-                  {header.label}
-                </th>
-              ))}
+              {tableHeaders.map(
+                (header, i) => (
+                  <th
+                    key={i}
+                    rowSpan={
+                      header.rowSpan
+                    }
+                    colSpan={
+                      header.colSpan
+                    }
+                    className="p-2 border border-slate-700"
+                  >
+                    {header.label}
+                  </th>
+                )
+              )}
             </tr>
+
             <tr>
               {tableHeaders
-                .filter((h) => h.children)
+                .filter(
+                  (h) => h.children
+                )
                 .flatMap((h) =>
-                  h.children!.map((child, i) => (
-                    <th
-                      key={`${h.label}-${i}`}
-                      className="p-2 border border-slate-700 bg-green-900"
-                    >
-                      {child}
-                    </th>
-                  ))
+                  h.children!.map(
+                    (
+                      child,
+                      i
+                    ) => (
+                      <th
+                        key={`${h.label}-${i}`}
+                        className="p-2 border border-slate-700 bg-green-700"
+                      >
+                        {child}
+                      </th>
+                    )
+                  )
                 )}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50 transition-colors">
-                {[...Array(19)].map((_, j) => {
-                  if (j === 2) return <td key={j} className="p-2 border font-semibold text-gray-700 text-center bg-white">{row.inputDrum}</td>;
-                  if (j === 3) return <td key={j} className="p-2 border font-semibold text-gray-700 text-center bg-white">{row.outputDrum}</td>;
-                  if (j === 5) return <td key={j} className="p-2 border text-center font-medium">{row.meter}</td>;
-                  if (j === 6) return <td key={j} className="p-2 border text-center text-black-600 font-bold bg-purple-50/30">{row.meterFinish}</td>;
-                  if (j === 9) return <td key={j} className="p-2 border text-center text-black-600 font-medium">{row.settingStart}</td>;
-                  if (j === 10) return <td key={j} className="p-2 border text-center text-black-600 font-medium">{row.settingFinish}</td>;
-                  if (j === 11)
+              <tr
+                key={i}
+                className="hover:bg-gray-50 transition-colors"
+              >
+                {[...Array(17)].map(
+                  (_, j) => {
+                    const commonTd =
+                      "px-3 py-2 border border-gray-300 text-center align-middle text-sm font-medium text-gray-800 bg-white";
+
+                    // INPUT DRUM
+                    if (j === 2)
+                      return (
+                        <td
+                          key={j}
+                          className={`${commonTd} align-top min-w-[140px]`}
+                        >
+                          <div className="space-y-1 text-left">
+                            {row.inputDrums
+                              ?.slice(
+                                0,
+                                row.showAllDrums
+                                  ? row
+                                      .inputDrums
+                                      .length
+                                  : 2
+                              )
+                              .map(
+                                (
+                                  drum: string,
+                                  idx: number
+                                ) => (
+                                  <div
+                                    key={
+                                      idx
+                                    }
+                                  >
+                                    {
+                                      drum
+                                    }
+                                  </div>
+                                )
+                              )}
+
+                            {row
+                              .inputDrums
+                              ?.length >
+                              2 && (
+                              <button
+                                onClick={() => {
+                                  setRows(
+                                    (
+                                      prev
+                                    ) =>
+                                      prev.map(
+                                        (
+                                          r,
+                                          index
+                                        ) =>
+                                          index ===
+                                          i
+                                            ? {
+                                                ...r,
+                                                showAllDrums:
+                                                  !r.showAllDrums,
+                                              }
+                                            : r
+                                      )
+                                  );
+                                }}
+                                className="text-green-700 text-sm font-semibold hover:underline"
+                              >
+                                {row.showAllDrums
+                                  ? "Show less"
+                                  : `+${
+                                      row
+                                        .inputDrums
+                                        .length -
+                                      2
+                                    } more`}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      );
+
+                    // OUTPUT DRUM
+                    if (j === 3)
+                      return (
+                        <td
+                          key={j}
+                          className={`${commonTd} align-top min-w-[140px]`}
+                        >
+                          <div className="space-y-1 text-left">
+                            {row.outputDrums
+                              ?.slice(
+                                0,
+                                row.showAllOutputDrums
+                                  ? row
+                                      .outputDrums
+                                      .length
+                                  : 2
+                              )
+                              .map(
+                                (
+                                  drum: string,
+                                  idx: number
+                                ) => (
+                                  <div
+                                    key={
+                                      idx
+                                    }
+                                  >
+                                    {
+                                      drum
+                                    }
+                                  </div>
+                                )
+                              )}
+
+                            {row
+                              .outputDrums
+                              ?.length >
+                              2 && (
+                              <button
+                                onClick={() => {
+                                  setRows(
+                                    (
+                                      prev
+                                    ) =>
+                                      prev.map(
+                                        (
+                                          r,
+                                          index
+                                        ) =>
+                                          index ===
+                                          i
+                                            ? {
+                                                ...r,
+                                                showAllOutputDrums:
+                                                  !r.showAllOutputDrums,
+                                              }
+                                            : r
+                                      )
+                                  );
+                                }}
+                                className="text-green-700 text-sm font-semibold hover:underline"
+                              >
+                                {row.showAllOutputDrums
+                                  ? "Show less"
+                                  : `+${
+                                      row
+                                        .outputDrums
+                                        .length -
+                                      2
+                                    } more`}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      );
+
+                    // METER START
+                    if (j === 4)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {row.meter}
+                        </td>
+                      );
+
+                    // METER FINISH
+                    if (j === 5)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.meterFinish
+                          }
+                        </td>
+                      );
+
+                    // TOTAL OUTPUT
+                    if (j === 6)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.totalOutput
+                          }
+                        </td>
+                      );
+
+                    // SETTING START
+                    if (j === 7)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.settingStart
+                          }
+                        </td>
+                      );
+
+                    // SETTING FINISH
+                    if (j === 8)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.settingFinish
+                          }
+                        </td>
+                      );
+
+                    // SETTING TOTAL
+                    if (j === 9)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {getTimeDifference(
+                            row.settingStart,
+                            row.settingFinish
+                          )}
+                        </td>
+                      );
+
+                    // RUNNING START
+                    if (j === 10)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.runningStart
+                          }
+                        </td>
+                      );
+
+                    // RUNNING FINISH
+                    if (j === 11)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {
+                            row.runningFinish
+                          }
+                        </td>
+                      );
+
+                    // RUNNING TOTAL
+                    if (j === 12)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {getTimeDifference(
+                            row.runningStart,
+                            row.runningFinish
+                          )}
+                        </td>
+                      );
+
+                    // REASON
+                    if (j === 13)
+                      return (
+                        <td
+                          key={j}
+                          className={
+                            commonTd
+                          }
+                        >
+                          {row.reason}
+                        </td>
+                      );
+
                     return (
-                      <td className="p-2 border text-center font-semibold text-green-700">
-                        {getTimeDifference(row.settingStart, row.settingFinish)}
-                      </td>
+                      <td
+                        key={j}
+                        className={
+                          commonTd
+                        }
+                      ></td>
                     );
-                  if (j === 12) return <td key={j} className="p-2 border text-center text-black-600 font-medium">{row.runningStart}</td>;
-                  if (j === 13) return <td key={j} className="p-2 border text-center text-black-600 font-medium">{row.runningFinish}</td>;
-                  if (j === 14)
-                    return (
-                      <td className="p-2 border text-center font-semibold text-blue-700">
-                        {getTimeDifference(row.runningStart, row.runningFinish)}
-                      </td>
-                    );
-                  if (j === 15) return <td key={j} className="p-2 border text-center font-bold text-red-600 bg-red-50/20">{row.reason}</td>;
-                  return <td key={j} className="p-2 border bg-white"></td>;
-                })}
+                  }
+                )}
               </tr>
             ))}
+
             {rows.length === 0 && (
               <tr>
-                <td colSpan={19} className="p-10 text-center text-gray-400 italic">
-                  No logs recorded yet. Click "Start New Entry" to begin.
+                <td
+                  colSpan={17}
+                  className="py-10 text-center text-gray-400 italic border border-gray-200"
+                >
+                  No logs recorded yet.
                 </td>
               </tr>
             )}

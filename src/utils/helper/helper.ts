@@ -15,10 +15,7 @@ export const tableHeaders = [
     label: "Output Drum",
     rowSpan: 2,
   },
-  {
-    label: "Color",
-    rowSpan: 2,
-  },
+ 
   {
     label: "Meter Reading",
     colSpan: 2,
@@ -26,10 +23,6 @@ export const tableHeaders = [
   },
   {
     label: "Total Output",
-    rowSpan: 2,
-  },
-  {
-    label: "Batch",
     rowSpan: 2,
   },
   {

@@ -10,7 +10,7 @@ const ReasonStep = ({ stopReason, setStopReason, onConfirm }: any) => {
     <div className="space-y-4">
       <div className="border-b pb-3 mb-4">
         <h3 className="text-xl font-bold text-gray-800">
-          Why are you stopping?
+          {/* Why are you stopping? */}
         </h3>
         <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
           Select a reason

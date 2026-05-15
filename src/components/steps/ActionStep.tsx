@@ -2,9 +2,9 @@ const ActionStep = ({ onStartSetting, onStartMachine }: any) => {
   return (
     <div className="space-y-4">
       <div className="border-b pb-3 mb-4">
-        <h3 className="text-xl font-bold text-gray-800">Select Action</h3>
+        {/* <h3 className="text-xl font-bold text-gray-800">Select Action</h3> */}
         <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
-          Production Phase Management
+          Start Machine
         </p>
       </div>
 

@@ -3,7 +3,6 @@ import JobCardLayout from "../DigitalJobcard/JobCardLayout";
 import InfoTable from "../jobcardlayout/InfoTable";
 import MachineTable from "../jobcardlayout/MachineTable";
 import ProductionLog from "../jobcardlayout/ProductionLog";
-import RemarksSection from "../jobcardlayout/RemarksSection";
 
 const Bradding = ({ onBack }: any) => {
   const [isUrdu, setIsUrdu] = useState(true);
@@ -45,7 +44,6 @@ const Bradding = ({ onBack }: any) => {
       <InfoTable rows={rows} />
       <MachineTable isUrdu={isUrdu} />
       <ProductionLog isUrdu={isUrdu} />
-      <RemarksSection isUrdu={isUrdu} />
     </JobCardLayout>
     </div>
   );

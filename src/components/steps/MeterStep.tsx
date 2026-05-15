@@ -12,7 +12,7 @@ const MeterStep = ({ meterReading, setMeterReading, onNext }: any) => {
 
       <button
         onClick={onNext}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg"
+        className="w-full cursor-pointer text-xl font-bold bg-green-700 text-white py-3 rounded-lg"
       >
         Next
       </button>

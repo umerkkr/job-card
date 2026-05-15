@@ -60,7 +60,7 @@ const VoiceComponent = ({ isUrdu }: { isUrdu: boolean }) => {
     recognitionRef.current?.start();
     setIsListening(true);
 
-    timeoutRef.current = setTimeout(() => stopListening(), 60000);
+    timeoutRef.current = setTimeout(() => stopListening(), 15000);
   };
 
   const stopListening = () => {
@@ -116,7 +116,7 @@ const VoiceComponent = ({ isUrdu }: { isUrdu: boolean }) => {
           {isListening ? (isUrdu ? "ریکارڈنگ..." : "Listening...") : ""}
         </span>
         <span className="text-[10px] text-gray-400">
-          {isUrdu ? "زیادہ سے زیادہ 1 منٹ" : "Max 1 min"}
+          {isUrdu ? "زیادہ سے زیادہ 15 سیکنڈ" : "Max 15 sec"}
         </span>
       </div>
     </div>

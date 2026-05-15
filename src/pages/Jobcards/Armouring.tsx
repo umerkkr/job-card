@@ -75,7 +75,7 @@ const Armouring = ({ onBack }: any) => {
         onClick={onBack}
         className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
       >
-        ← {isUrdu ? "پیچھے" : "Back"}
+        ← Back
       </button>
 
       <JobCardLayout

@@ -54,11 +54,11 @@ const SpecialRequirementsTable = ({ isUrdu }: any) => {
                 <input className="w-full font-bold outline-none text-center" />
               </td>
               <td className="border p-1 font-bold">
-                {isUrdu ? "رنگ منتخب کریں" : "|"}
+                |
               </td>
               <td className="border p-1">
                 <input
-                  defaultValue="19118.25, 9778.61, 6156.9"
+                  defaultValue="515.5"
                   className="w-full font-bold outline-none text-center"
                   readOnly
                 />

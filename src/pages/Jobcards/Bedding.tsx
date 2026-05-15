@@ -9,6 +9,8 @@ import ArmouringDetailsTable from "../jobcardlayout/ArmouringDetailsTable";
 
 const Armouring = ({ onBack }: any) => {
   const [isUrdu, setIsUrdu] = useState(true);
+
+  // COLLAPSIBLE STATE
   const [open, setOpen] = useState(false);
 
   const getRows = () => [
@@ -19,7 +21,7 @@ const Armouring = ({ onBack }: any) => {
           <input
             defaultValue="PC -05696/2526, PC -05721/2526, PC -05729/2526"
             readOnly
-            className="w-full font-bold text-center outline-none bg-transparent"
+            className="w-full font-bold text-center outline-none"
           />
         ),
       },
@@ -29,7 +31,7 @@ const Armouring = ({ onBack }: any) => {
           <input
             defaultValue="5"
             readOnly
-            className="w-full font-bold text-center outline-none bg-transparent"
+            className="w-full font-bold text-center outline-none"
           />
         ),
       },
@@ -39,7 +41,7 @@ const Armouring = ({ onBack }: any) => {
           <input
             defaultValue="Mar"
             readOnly
-            className="w-full font-bold text-center outline-none bg-transparent"
+            className="w-full font-bold text-center outline-none"
           />
         ),
       },
@@ -49,7 +51,7 @@ const Armouring = ({ onBack }: any) => {
           <input
             defaultValue="2026"
             readOnly
-            className="w-full font-bold text-center outline-none bg-transparent"
+            className="w-full font-bold text-center outline-none"
           />
         ),
       },
@@ -61,7 +63,7 @@ const Armouring = ({ onBack }: any) => {
           <input
             defaultValue="CU/PVC 1X95MM² (FLEXIBLE) 450/750 V (GREEN/YELLOW), CU/PVC/PVC 1x185 MM²"
             readOnly
-            className="w-full font-bold text-center outline-none bg-transparent"
+            className="w-full font-bold text-center outline-none"
           />
         ),
         colSpan: 7,
@@ -75,23 +77,26 @@ const Armouring = ({ onBack }: any) => {
         onClick={onBack}
         className="mb-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
       >
-        ← {isUrdu ? "پیچھے" : "Back"}
+        ← Back
       </button>
 
       <JobCardLayout
-        title={"ARMOURING"}
+        title="ARMOURING"
         jobId="armouring"
         isUrdu={isUrdu}
         setIsUrdu={setIsUrdu}
       >
-        <div className="border border-black text-[11px] bg-white">
+        <div className="border border-black text-[11px]">
+
           {/* COLLAPSIBLE HEADER */}
           <button
             onClick={() => setOpen(!open)}
             className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
           >
             <span>
-              {isUrdu ? "جاب کارڈ کی تفصیلات" : "JOB CARD DETAILS"}
+              {isUrdu
+                ? "جاب کارڈ کی تفصیلات"
+                : "JOB CARD DETAILS"}
             </span>
 
             <span
@@ -103,7 +108,7 @@ const Armouring = ({ onBack }: any) => {
             </span>
           </button>
 
-          {/* ALL TABLES AND LOGS ARE NOW INSIDE THIS DIV */}
+          {/* COLLAPSIBLE CONTENT */}
           <div
             className={`overflow-hidden transition-all duration-300 ${
               open
@@ -120,9 +125,11 @@ const Armouring = ({ onBack }: any) => {
             <InputLotTable isUrdu={isUrdu} />
 
             <ArmouringDetailsTable isUrdu={isUrdu} />
-
-            <ProductionLog isUrdu={isUrdu} />
           </div>
+
+          {/* ALWAYS VISIBLE */}
+          <ProductionLog isUrdu={isUrdu} />
+
         </div>
       </JobCardLayout>
     </div>

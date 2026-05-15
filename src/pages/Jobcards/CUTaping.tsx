@@ -52,7 +52,6 @@ const CuTaping = ({ onBack }: any) => {
       >
         <div className="border border-black text-[11px]">
 
-          {/* COLLAPSIBLE HEADER */}
           <button
             onClick={() => setOpen(!open)}
             className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"
@@ -72,7 +71,6 @@ const CuTaping = ({ onBack }: any) => {
             </span>
           </button>
 
-          {/* COLLAPSIBLE CONTENT */}
           <div
             className={`overflow-hidden transition-all duration-300 ${
               open
@@ -91,7 +89,6 @@ const CuTaping = ({ onBack }: any) => {
             <TapeDetailsTable isUrdu={isUrdu} />
           </div>
 
-          {/* ALWAYS VISIBLE */}
           <ProductionLog isUrdu={isUrdu} />
         </div>
       </JobCardLayout>

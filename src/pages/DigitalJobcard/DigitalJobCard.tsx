@@ -5,13 +5,13 @@ const JOB_CARDS = [
 
   { id: 'extrusion', label: 'Extrusion' },
   
-  // { id: 'bunching', label: 'Bunching' },
+  // { id: 'bedding', label: 'Bedding' },
   { id: 'laying-up', label: 'Laying Up' },
   { id: 'armouring', label: 'Armouring' },
   // { id: 'sheathing', label: 'Sheathing' },
   // { id: 'rewinding', label: 'Rewinding' },
   // { id: 'tinning', label: 'Tinning' },
-  // { id: 'stranding ', label: 'Stranding' },
+  { id: 'stranding', label: 'stranding' },
   { id: 'drawing', label: 'Drawing' },
   { id: 'cu-taping', label: 'CU Taping' },
 ];

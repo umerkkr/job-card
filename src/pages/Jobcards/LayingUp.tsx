@@ -53,7 +53,7 @@ const LayingUp = ({ onBack }: Props) => {
       </button>
 
       <JobCardLayout
-        title={t("لے اپ", "LAYING UP")}
+        title={"LAYING UP"}
         isUrdu={isUrdu}
         setIsUrdu={setIsUrdu}
         onBack={onBack}

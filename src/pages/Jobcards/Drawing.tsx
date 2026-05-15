@@ -17,7 +17,7 @@ const WireDrawing = ({ onBack }: any) => {
       </button>
 
       <JobCardLayout
-        title={isUrdu ? "وائر ڈرائنگ" : "WIRE DRAWING"}
+        title={"WIRE DRAWING"}
         isUrdu={isUrdu}
         setIsUrdu={setIsUrdu}
       >
@@ -58,7 +58,7 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-1 w-[220px]">
-                    LX-05967/2526
+                    LX -00025/2526
                   </td>
 
                   <td className="border border-black p-1 font-bold w-[70px] text-center">
@@ -66,7 +66,7 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-1 text-center w-[50px]">
-                    3
+                    2
                   </td>
 
                   <td className="border border-black p-1 font-bold w-[70px] text-center">
@@ -74,7 +74,7 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-1 text-center w-[60px]">
-                    Apr
+                    Jul
                   </td>
 
                   <td className="border border-black p-1 font-bold w-[70px] text-center">
@@ -82,7 +82,7 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-1 text-center">
-                    2026
+                    2025
                   </td>
                 </tr>
               </tbody>
@@ -140,15 +140,16 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    LVC-821
+                    MVC-277
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    GCF-A-DRA-M-85D26-178024
+                    GCF-A-DRA-M-85G25-145005
+
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    9.5584
+                    1.7922
                   </td>
                 </tr>
               </tbody>
@@ -174,15 +175,15 @@ const WireDrawing = ({ onBack }: any) => {
               <tbody>
                 <tr>
                   <td className="border border-black p-2 text-center">
-                    25878.0584 m
+                    52270 m
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    277376.06 m
+                    52008.1128 m
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    1998.58575
+                   0
                   </td>
                 </tr>
               </tbody>
@@ -212,15 +213,13 @@ const WireDrawing = ({ onBack }: any) => {
               <tbody>
                 <tr>
                   <td className="border border-black p-2">
-                    Plain Annealed CU of dia 2.33 mm
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    2265, 1087, 4238
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    677.5125, 1518.8827
+                    52788.23
                   </td>
                 </tr>
               </tbody>
@@ -272,11 +271,10 @@ const WireDrawing = ({ onBack }: any) => {
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    1 × 36 × 7704.9056
+                    1 x 36 x 1444.6698
                   </td>
 
                   <td className="border border-black p-2 text-center">
-                    (W × S × L × Set)
                   </td>
                 </tr>
               </tbody>

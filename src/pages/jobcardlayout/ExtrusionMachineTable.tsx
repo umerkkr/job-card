@@ -29,15 +29,16 @@ const ExtrusionMachineTable = ({ isUrdu }: any) => {
 
       <tbody>
         <tr className="text-center font-bold">
-          <td className="border border-black">120-EXTRUDER-OLD</td>
+          <td className="border border-black">SIOPLAS</td>
           <td className="border border-black">
-            {isUrdu ? "انسولیٹنگ" : "INSULATING"}
+             INSULATING_MV
+            {/* {isUrdu ? "انسولیٹنگ" : "INSULATING"} */}
           </td>
-          <td className="border border-black">50</td>
-          <td className="border border-black">50</td>
-          <td className="border border-black">145 m</td>
+          <td className="border border-black"> 150</td>
+          <td className="border border-black"> 150</td>
+          <td className="border border-black">500 m</td>
           <td className="border border-black">—</td>
-          <td className="border border-black">0783</td>
+          <td className="border border-black"> 1.6917</td>
         </tr>
       </tbody>
     </table>

@@ -21,7 +21,6 @@ type Props = {
 const Extrusion = ({ onBack }: Props) => {
   const [isUrdu, setIsUrdu] = useState(true);
 
-  // COLLAPSIBLE STATE
   const [open, setOpen] = useState(false);
 
   const t = (ur: string, en: string) => (isUrdu ? ur : en);
@@ -29,17 +28,17 @@ const Extrusion = ({ onBack }: Props) => {
   const rows = [
     [
       { content: t("ورک آرڈر نمبر", "Work Order No") },
-      { content: "LX-05871/2526" },
+      { content: ",X  -00025/2526" },
       { content: t("ہفتہ", "Week") },
       { content: "2" },
       { content: t("مہینہ", "Month") },
-      { content: "Apr" },
+      { content: "Jul" },
       { content: t("سال", "Year") },
-      { content: "2026" },
+      { content: "2025" },
     ],
     [
       { content: t("تفصیل", "Description") },
-      { content: "AL/XLPE/PVC 1x150 MM² 600/1000 V", colSpan: 7 },
+      { content: "CU/XLPE/SWA/PVC 3X150 MM² 6.35/11 KV (TRIPLE EXT.)", colSpan: 7 },
     ],
   ];
 
@@ -53,14 +52,13 @@ const Extrusion = ({ onBack }: Props) => {
       </button>
 
       <JobCardLayout
-        title={t("ایکسٹروژن", "EXTRUSION")}
+        title={ "EXTRUSION"}
         isUrdu={isUrdu}
         setIsUrdu={setIsUrdu}
         onBack={onBack}
       >
         <div className="border border-black text-[11px]">
           
-          {/* COLLAPSIBLE HEADER */}
           <button
             onClick={() => setOpen(!open)}
             className="w-full flex items-center justify-between bg-gray-100 border-b border-black px-3 py-2 font-bold text-[13px]"

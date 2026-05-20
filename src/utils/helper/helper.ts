@@ -4,7 +4,7 @@ export const tableHeaders = [
     rowSpan: 2,
   },
   {
-    label: "Crew T. No",
+    label: "Crew No",
     rowSpan: 2,
   },
   {

@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Tesseract from "tesseract.js";
 
 import ChangeDrumStep from "../../components/steps/ChangeDrumStep";
+import MeterStep from "../../components/steps/MeterStep";
 import MeterFinishStep from "../../components/steps/MeterFinishStep";
 import ReasonStep from "../../components/steps/ReasonStep";
 import OutputDrumStep from "../../components/steps/OutputDrumStep";
@@ -12,6 +13,16 @@ import {
   getTimeDifference,
   tableHeaders,
 } from "../../utils/helper/helper";
+
+const getActiveCrewNo = () => {
+  try {
+    const raw = window.localStorage.getItem("jobcard-auth");
+    if (!raw) return "";
+    return (JSON.parse(raw) as { crewNo?: string }).crewNo ?? "";
+  } catch {
+    return "";
+  }
+};
 
 const ProductionLog = ({}: any) => {
   const [showModal, setShowModal] =
@@ -24,6 +35,7 @@ const ProductionLog = ({}: any) => {
       | "outputDrum"
       | "reason"
       | "changeDrum"
+      | "meterStart"
       | "meterFinish"
     >("action");
 
@@ -66,6 +78,77 @@ const ProductionLog = ({}: any) => {
   const [meterFinish, setMeterFinish] =
     useState(0);
 
+  const [meterReading, setMeterReading] =
+    useState<number | "">("");
+
+  const [liveTime, setLiveTime] =
+    useState(
+      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      })
+    );
+  const [activeCrewNo, setActiveCrewNo] =
+    useState(getActiveCrewNo());
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setActiveCrewNo(getActiveCrewNo());
+    };
+
+    window.addEventListener(
+      "jobcard-auth-change",
+      handleAuthChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "jobcard-auth-change",
+        handleAuthChange
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeCrewNo || rows.length === 0) return;
+
+    const lastRow = rows[rows.length - 1];
+    if (lastRow.crewNo === activeCrewNo) return;
+
+    setRows((prev) => [
+      ...prev,
+      {
+        dateShift: new Date().toLocaleDateString("en-GB"),
+        crewNo: activeCrewNo,
+        settingStart: "",
+        settingFinish: "",
+        runningStart: "",
+        runningFinish: "",
+        totalOutput: "",
+        meter: "",
+        meterFinish: "",
+        reason: "",
+        outputDrums: [],
+        inputDrums: [],
+      },
+    ]);
+  }, [activeCrewNo, rows]);
+
+  useEffect(() => {
+    if (!isSettingRunning) return;
+
+    const timer = window.setInterval(() => {
+      setLiveTime(
+        new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      })
+      );
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [isSettingRunning]);
+
   const [changeDrumData, setChangeDrumData] =
     useState({
       drumType: "",
@@ -80,22 +163,49 @@ const ProductionLog = ({}: any) => {
       shortReason: "",
     });
 
+  const calculateTotalOutput = (
+    startMeter: number | string,
+    finishMeter: number | string
+  ) => {
+    if (
+      startMeter === "" ||
+      finishMeter === ""
+    ) {
+      return "";
+    }
+
+    const total =
+      Number(finishMeter) -
+      Number(startMeter);
+
+    return Number.isFinite(total)
+      ? total
+      : "";
+  };
+
   // START SETTING
-  const handleStartSetting = () => {
+  const handleStartSetting = (
+    startMeterReading: number
+  ) => {
     setIsResumeJob(false);
 
     const time =
-      new Date().toLocaleTimeString();
+      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
+
+    setLiveTime(time);
 
     const newRow = {
+      dateShift: new Date().toLocaleDateString("en-GB"),
+      crewNo: activeCrewNo,
       settingStart: time,
       settingFinish: "",
       runningStart: "",
       runningFinish: "",
-      totalOutput: 0,
+      totalOutput: "",
 
-      // START METER AUTO 0
-      meter: 0,
+      meter: startMeterReading,
 
       meterFinish: "",
 
@@ -178,7 +288,9 @@ const ProductionLog = ({}: any) => {
   // STOP SETTING
   const handleStopSetting = () => {
     const finishTime =
-      new Date().toLocaleTimeString();
+      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
 
     setRows((prev) => {
       const updated = [...prev];
@@ -186,8 +298,6 @@ const ProductionLog = ({}: any) => {
       updated[
         currentRow
       ].settingFinish = finishTime;
-
-      updated[currentRow].meter = 0;
 
       return updated;
     });
@@ -208,19 +318,19 @@ const ProductionLog = ({}: any) => {
       rows[rows.length - 1];
 
     const startTime =
-      new Date().toLocaleTimeString();
+      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
 
     const newRow = {
+      dateShift: new Date().toLocaleDateString("en-GB"),
+      crewNo: activeCrewNo,
       // NO SETTING TIME
       settingStart: "",
       settingFinish: "",
-
       runningStart: startTime,
-
       runningFinish: "",
-
-      totalOutput: 0,
-
+      totalOutput: "",
       // PREVIOUS FINISH = NEW START
       meter:
         previousRow?.meterFinish || 0,
@@ -259,7 +369,9 @@ const ProductionLog = ({}: any) => {
     drums: string[]
   ) => {
     const runTime =
-      new Date().toLocaleTimeString();
+      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
 
     setRows((prev) => {
       const updated = [...prev];
@@ -314,6 +426,47 @@ const ProductionLog = ({}: any) => {
                 />
               )}
 
+              {/* START METER */}
+              {modalStep ===
+                "meterStart" && (
+                <MeterStep
+                  meterReading={
+                    meterReading
+                  }
+                  setMeterReading={
+                    setMeterReading
+                  }
+                  title="Meter Reading (Start)"
+                  placeholder="Enter start meter reading"
+                  buttonLabel="Start Setup Time"
+                  onNext={() => {
+                    if (
+                      meterReading === ""
+                    ) {
+                      return;
+                    }
+
+                    handleStartSetting(
+                      Number(
+                        meterReading
+                      )
+                    );
+
+                    setMeterReading(
+                      ""
+                    );
+
+                    setShowModal(
+                      false
+                    );
+
+                    setModalStep(
+                      "action"
+                    );
+                  }}
+                />
+              )}
+
               {/* OUTPUT DRUM */}
               {modalStep ===
                 "outputDrum" && (
@@ -362,7 +515,9 @@ const ProductionLog = ({}: any) => {
                   }
                   onConfirm={() => {
                     const finishTime =
-                      new Date().toLocaleTimeString();
+                      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
 
                     setRows((prev) => {
                       const updated = [
@@ -420,6 +575,16 @@ const ProductionLog = ({}: any) => {
                       ].meterFinish =
                         meterFinish;
 
+                      updated[
+                        currentRow
+                      ].totalOutput =
+                        calculateTotalOutput(
+                          updated[
+                            currentRow
+                          ].meter,
+                          meterFinish
+                        );
+
                       return updated;
                     });
 
@@ -455,7 +620,9 @@ const ProductionLog = ({}: any) => {
                   }
                   onSave={() => {
                     const finishTime =
-                      new Date().toLocaleTimeString();
+                      new Date().toLocaleTimeString("en-GB", {
+        hour12: false,
+      });
 
                     setRows((prev) => {
                       const updated = [
@@ -514,12 +681,17 @@ const ProductionLog = ({}: any) => {
             if (
               rows.length === 0
             ) {
-              handleStartSetting();
+              setMeterReading("");
+
+              setModalStep(
+                "meterStart"
+              );
+
+              setShowModal(true);
 
               return;
             }
 
-            // RESUME JOB
             handleResumeJob();
           }}
           className={`px-6 py-2 rounded-full text-sm font-bold transition-all transform active:scale-95 shadow-md ${
@@ -596,6 +768,26 @@ const ProductionLog = ({}: any) => {
                   (_, j) => {
                     const commonTd =
                       "px-3 py-2 border border-gray-300 text-center align-middle text-sm font-medium text-gray-800 bg-white";
+
+                    if (j === 0)
+                      return (
+                        <td
+                          key={j}
+                          className={commonTd}
+                        >
+                          {row.dateShift}
+                        </td>
+                      );
+
+                    if (j === 1)
+                      return (
+                        <td
+                          key={j}
+                          className={commonTd}
+                        >
+                          {row.crewNo}
+                        </td>
+                      );
 
                     // INPUT DRUM
                     if (j === 2)
@@ -833,7 +1025,12 @@ const ProductionLog = ({}: any) => {
                         >
                           {getTimeDifference(
                             row.settingStart,
-                            row.settingFinish
+                            row.settingFinish ||
+                              (isSettingRunning &&
+                              i ===
+                                currentRow
+                                ? liveTime
+                                : "")
                           )}
                         </td>
                       );

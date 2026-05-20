@@ -16,6 +16,8 @@ type JobData = {
 type Props = {
   onBack: () => void;
   data: JobData;
+  crewNo?: string;
+  onLogout?: () => void;
 };
 
 const LayingUp = ({ onBack }: Props) => {

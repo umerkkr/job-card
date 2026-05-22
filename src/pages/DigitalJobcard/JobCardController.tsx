@@ -2,14 +2,14 @@ import { useState } from "react";
 import type { AuthUser } from "../../App";
 import DigitalJobCard from "./DigitalJobCard";
 
-import Armouring from "../Jobcards/Armouring";
-import Extrusion from "../Jobcards/Extrusion";
-import Bradding from "../Jobcards/Bradding";
-import Bunching from "../Jobcards/Bunching";
-import Stranding from "../Jobcards/Stranding";
+// import Armouring from "../Jobcards/Armouring";
+// import Extrusion from "../Jobcards/Extrusion";
+// import Bradding from "../Jobcards/Bradding";
+// import Bunching from "../Jobcards/Bunching";
+// import Stranding from "../Jobcards/Stranding";
 import WireDrawing from "../Jobcards/Drawing";
-import LayingUp from "../Jobcards/LayingUp";
-import CuTaping from "../Jobcards/CUTaping";
+// import LayingUp from "../Jobcards/LayingUp";
+// import CuTaping from "../Jobcards/CUTaping";
 
 type JobData = {
   jobName: string;
@@ -33,29 +33,29 @@ const JobCardController = ({ user, onLogout }: Props) => {
   }
 
   switch (jobData.jobId) {
-  case "armouring":
-    return <Armouring onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "armouring":
+  //   return <Armouring onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
   case "drawing":
     return <WireDrawing onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "stranding":
-    return <Stranding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "stranding":
+  //   return <Stranding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "extrusion":
-    return <Extrusion onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "extrusion":
+  //   return <Extrusion onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "bunching":
-    return <Bunching onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "bunching":
+  //   return <Bunching onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "laying-up":
-    return <LayingUp onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "laying-up":
+  //   return <LayingUp onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "sheathing":
-    return <Bradding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "sheathing":
+  //   return <Bradding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  case "cu-taping":
-    return <CuTaping onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  // case "cu-taping":
+  //   return <CuTaping onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
   default:
     return <DigitalJobCard onCreateJob={setJobData} />;

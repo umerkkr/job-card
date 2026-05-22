@@ -724,7 +724,7 @@ export default function ProductionLog({ isUrdu = true }: { isUrdu?: boolean }) {
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[1.25fr_0.75fr]">
-            <div className="rounded-[1.5rem] bg-slate-950 p-4 text-white">
+            <div className="rounded-[1.5rem] bg-green-800 p-4 text-white">
               <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-slate-300">{l.product}</div>
@@ -837,7 +837,7 @@ export default function ProductionLog({ isUrdu = true }: { isUrdu?: boolean }) {
               <div className="grid gap-2">
                 {logs.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm font-bold text-slate-400">{l.noLogs}</div>}
                 {logs.map((log) => (
-                  <div key={log.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div key={log.id} className="rounded-2xl border border-green-200 bg-green-50 p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="font-black">{l.row} {log.rowNo}</div>
                       <span className={`rounded-full px-3 py-1 text-xs font-black ${log.status === "RUNNING" ? "bg-green-100 text-green-700" : log.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{log.status}</span>

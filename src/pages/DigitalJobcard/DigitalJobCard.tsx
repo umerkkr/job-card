@@ -1,16 +1,16 @@
 const JOB_CARDS = [
 
-  { id: 'extrusion', label: 'Extrusion' },
+  // { id: 'extrusion', label: 'Extrusion' },
   
   // { id: 'bedding', label: 'Bedding' },
-  { id: 'laying-up', label: 'Laying Up' },
-  { id: 'armouring', label: 'Armouring' },
+  // { id: 'laying-up', label: 'Laying Up' },
+  // { id: 'armouring', label: 'Armouring' },
   // { id: 'sheathing', label: 'Sheathing' },
   // { id: 'rewinding', label: 'Rewinding' },
   // { id: 'tinning', label: 'Tinning' },
-  { id: 'stranding', label: 'stranding' },
+  // { id: 'stranding', label: 'stranding' },
   { id: 'drawing', label: 'Drawing' },
-  { id: 'cu-taping', label: 'CU Taping' },
+  // { id: 'cu-taping', label: 'CU Taping' },
 ];
 
 type JobData = {

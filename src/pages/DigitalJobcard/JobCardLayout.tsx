@@ -1,11 +1,4 @@
-import VoiceComponent from "../jobcardlayout/Instructions";
-
-const JobCardLayout = ({
-  title,
-  children,
-  isUrdu,
-  setIsUrdu,
-}: any) => {
+const JobCardLayout = ({ title, children, isUrdu, setIsUrdu }: any) => {
   const toggleLanguage = () => {
     setIsUrdu(!isUrdu);
   };
@@ -16,37 +9,48 @@ const JobCardLayout = ({
   };
 
   return (
-    <div className="bg-white border-2 border-black p-5 text-[11px] max-w-[1200px] mx-auto shadow">
-      <div className="bg-green-700 text-white p-2 flex justify-between items-center rounded mb-4">
-        <button
-          onClick={toggleLanguage}
-          className="bg-white text-green-700 px-3 py-1 text-xs rounded font-bold"
-        >
-          {isUrdu ? "Switch to English / Ø§Ù†Ú¯Ø±ÛŒØ²ÛŒ" : "Switch to Urdu / Ø§Ø±Ø¯Ùˆ"}
-        </button>
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f9fa_0%,#eef3f6_100%)] px-2 py-3 text-[11px]">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="sticky top-2 z-20 mb-3 rounded-[22px] border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+          <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleLanguage}
+                className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-black text-green-800 transition hover:bg-green-100"
+              >
+                {isUrdu ? "Switch to English" : "Switch to Urdu"}
+              </button>
+            </div>
 
-        <button
-          onClick={handleLogout}
-          className="bg-white text-green-700 px-3 py-1 text-xs rounded font-bold"
-        >
-          Logout
-        </button>
-      </div>
+            <div className="text-center">
+              <div className="text-[13px] font-black tracking-[0.22em] text-green-700">
+                PAKISTAN CABLES LIMITED
+              </div>
+              <div className="text-[20px] font-black leading-tight text-slate-950">
+                {title}
+              </div>
+            </div>
 
-      <div className="grid grid-cols-3 border-b-2 border-black pb-1 mb-2">
-        <div className="font-bold text-[20px]">PAKISTAN CABLES LIMITED</div>
-
-        <div className="text-center text-[18px] leading-tight font-bold">
-          {title}
+            <div className="flex items-center justify-start gap-2 md:justify-end">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-right text-[10px] font-bold leading-tight text-slate-500">
+                Print Date: 4/6/2026 11:43:30 AM
+                <br />
+                Printed by: ABC USER
+              </div>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 transition hover:border-green-300 hover:text-green-800"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="text-right text-[11px]">
-          Print Date: 4/6/2026 11:43:30 AM <br />
-          Printed by: ABC USER
+        <div className="rounded-[26px] border border-slate-200 bg-white p-3 shadow-xl md:p-5">
+          {children}
         </div>
       </div>
-      {children}
-      <VoiceComponent isUrdu={isUrdu} />
     </div>
   );
 };

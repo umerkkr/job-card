@@ -1,16 +1,7 @@
 const JOB_CARDS = [
-
-  // { id: 'extrusion', label: 'Extrusion' },
-  
-  // { id: 'bedding', label: 'Bedding' },
-  // { id: 'laying-up', label: 'Laying Up' },
-  // { id: 'armouring', label: 'Armouring' },
-  // { id: 'sheathing', label: 'Sheathing' },
-  // { id: 'rewinding', label: 'Rewinding' },
-  // { id: 'tinning', label: 'Tinning' },
-  // { id: 'stranding', label: 'stranding' },
-  { id: 'drawing', label: 'Drawing' },
-  // { id: 'cu-taping', label: 'CU Taping' },
+  { id: "drawing", label: "Drawing", accent: "from-emerald-50 to-white" },
+  { id: "laying-up", label: "Laying Up", accent: "from-teal-50 to-white" },
+  { id: "armouring", label: "Armouring", accent: "from-amber-50 to-white" },
 ];
 
 type JobData = {
@@ -28,42 +19,48 @@ type Props = {
 
 const DigitalJobCard = ({ onCreateJob }: Props) => {
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-2 md:p-4">
-      <header className="max-w-7xl mx-auto mb-8">
-        <div className="bg-[#007a3d] text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight uppercase">Job Cards</h1>
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f9fa_0%,#eef3f6_100%)] p-2 md:p-4">
+      <header className="mx-auto mb-6 max-w-7xl">
+        <div className="overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#0b6d2f_0%,#0f7a36_55%,#0a5c27_100%)] p-6 text-white shadow-2xl">
+          <div className="text-xs font-bold uppercase tracking-[0.28em] text-white/75">
+            Cable Flow MES
           </div>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">Job Cards</h1>
+          <p className="mt-2 max-w-2xl text-sm font-semibold text-white/80">
+            Select a process card to open the matching job-card workspace.
+          </p>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
+      <main className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {JOB_CARDS.map((job) => (
             <button
               key={job.id}
-              className="group relative cursor-pointer bg-white border border-gray-200 hover:border-[#007a3d] p-10 rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 text-center flex flex-col items-center justify-center min-h-[180px] overflow-hidden"
+              className={`group relative overflow-hidden rounded-[26px] border border-slate-200 bg-gradient-to-br ${job.accent} p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl`}
               onClick={() =>
                 onCreateJob({
                   jobName: job.label,
-                  process: job.label, 
+                  process: job.label,
                   jobId: job.id,
                   machine: "",
                   products: [],
                 })
               }
             >
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gray-50 rounded-full group-hover:bg-green-50 transition-colors duration-500" />
-
-              <span className="relative z-10 text-xl font-black text-gray-800 group-hover:text-[#007a3d] transition-colors tracking-tighter">
-                {job.label.toUpperCase()}
-              </span>
-
-              <p className="relative z-10 text-[10px] font-bold text-gray-400 mt-2 group-hover:text-green-600/70 uppercase tracking-widest">
-                Tap to open log
-              </p>
-
-              <div className="absolute bottom-0 left-0 w-0 h-1.5 bg-[#007a3d] transition-all duration-500 group-hover:w-full" />
+              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-6 translate-x-6 rounded-full bg-white/70 transition group-hover:bg-green-50" />
+              <div className="relative z-10">
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                  Operator Job Card
+                </div>
+                <div className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                  {job.label.toUpperCase()}
+                </div>
+                <p className="mt-3 text-sm font-semibold text-slate-500">
+                  Tap to open log
+                </p>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-green-700 transition-all duration-500 group-hover:w-full" />
             </button>
           ))}
         </div>

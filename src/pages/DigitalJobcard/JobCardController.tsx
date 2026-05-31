@@ -8,7 +8,7 @@ import DigitalJobCard from "./DigitalJobCard";
 // import Bunching from "../Jobcards/Bunching";
 // import Stranding from "../Jobcards/Stranding";
 import WireDrawing from "../Jobcards/Drawing";
-// import LayingUp from "../Jobcards/LayingUp";
+import LayingUp from "../Jobcards/LayingUp";
 // import CuTaping from "../Jobcards/CUTaping";
 
 type JobData = {
@@ -48,8 +48,8 @@ const JobCardController = ({ user, onLogout }: Props) => {
   // case "bunching":
   //   return <Bunching onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
-  // case "laying-up":
-  //   return <LayingUp onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+  case "laying-up":
+    return <LayingUp onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
   // case "sheathing":
   //   return <Bradding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;

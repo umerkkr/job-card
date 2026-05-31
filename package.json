@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,7 +14,8 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-webcam": "^7.2.0",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "vosk-browser": "^0.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

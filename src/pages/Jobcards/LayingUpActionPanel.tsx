@@ -8,6 +8,7 @@ export type ActionKey =
   | "resume"
   | "complete"
   | "changeDrum"
+  | "tooling"
   | "rewind"
   | "rework"
   | "breakdown"

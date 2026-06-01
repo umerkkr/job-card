@@ -2,19 +2,15 @@ import { useState } from "react";
 import type { AuthUser } from "../../App";
 import DigitalJobCard from "./DigitalJobCard";
 
-// import Armouring from "../Jobcards/Armouring";
-// import Extrusion from "../Jobcards/Extrusion";
-// import Bradding from "../Jobcards/Bradding";
-// import Bunching from "../Jobcards/Bunching";
-// import Stranding from "../Jobcards/Stranding";
 import WireDrawing from "../Jobcards/Drawing";
 import LayingUp from "../Jobcards/LayingUp";
-// import CuTaping from "../Jobcards/CUTaping";
+import Sheathing from "../Jobcards/Sheathing";
 
 type JobData = {
   jobName: string;
   jobId: string;
   machine: string;
+  process: string;
   products: any[];
 };
 
@@ -50,6 +46,9 @@ const JobCardController = ({ user, onLogout }: Props) => {
 
   case "laying-up":
     return <LayingUp onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+
+  case "sheathing":
+    return <Sheathing onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
   // case "sheathing":
   //   return <Bradding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;

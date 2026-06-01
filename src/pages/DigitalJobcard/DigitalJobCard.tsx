@@ -1,6 +1,7 @@
 const JOB_CARDS = [
   { id: "drawing", label: "Drawing", accent: "from-emerald-50 to-white" },
   { id: "laying-up", label: "Laying Up", accent: "from-teal-50 to-white" },
+  { id: "sheathing", label: "Sheathing", accent: "from-indigo-50 to-white" },
   { id: "armouring", label: "Armouring", accent: "from-amber-50 to-white" },
 ];
 

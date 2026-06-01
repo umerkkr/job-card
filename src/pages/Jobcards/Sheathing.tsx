@@ -6,7 +6,23 @@ type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () =>
 type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "COMPLETED";
 type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "fault" | "materialIssue" | "decision" | "rewind" | "rework" | "tooling" | null;
 
-const ORDER_LENGTH = 500;
+const ORDER_LENGTH = 750;
+const INPUT_DRUM_LOV = [
+  "T9-BLACK-0000507-L2-1-26",
+  "T9-BLACK-0504-L2-1-32",
+  "V3/X -00190/2526-##660147--19-JUL-25",
+  "T9-BLACK-0504-L2-1-32",
+  "T9-BLACK-0000507-L2-1-26",
+  "T9-BLACK-0000506-L2-11-43",
+];
+const OUTPUT_DRUM_LOV = [
+  "106/198774/X -00190/25",
+  "106/198774/X -00190/25",
+  "106/198774/X -00190/25",
+  "",
+  "",
+  "",
+];
 
 const actionCards: readonly ActionCardData[] = [
   { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
@@ -56,7 +72,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function WireDrawing({ onBack, data }: Props) {
+export default function Sheathing({ onBack, data }: Props) {
   const [isUrdu, setIsUrdu] = useState(true);
   const [status, setStatus] = useState<Status>("READY");
   const [workflow, setWorkflow] = useState<ModalMode>(null);
@@ -76,6 +92,8 @@ export default function WireDrawing({ onBack, data }: Props) {
   const [nextAfterRewind, setNextAfterRewind] = useState<"continue" | "rework">("continue");
   const [toolingReason, setToolingReason] = useState("Die Linking Size");
 
+  const selectedInputDrum = inputDrum || INPUT_DRUM_LOV[0];
+  const selectedOutputDrum = outputDrum || OUTPUT_DRUM_LOV[0];
   const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
   const statusText = useMemo(() => {
     switch (status) {
@@ -108,7 +126,6 @@ export default function WireDrawing({ onBack, data }: Props) {
   }, [status]);
   const setupTimeLabel = `${String(Math.floor(setupSeconds / 60)).padStart(2, "0")}:${String(setupSeconds % 60).padStart(2, "0")}`;
   const liveClockLabel = liveClock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
   const pushEvent = (msg: string) => setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
 
   useEffect(() => {
@@ -224,33 +241,16 @@ export default function WireDrawing({ onBack, data }: Props) {
   };
 
   const disabledKeys = useMemo<Partial<Record<ActionKey, boolean>>>(() => {
-    if (status === "COMPLETED") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "READY") {
-      return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "SETUP") {
-      return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "QC_HOLD") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") {
-      const allowDecision = status !== "STOPPED" || ["Management decision", "Setup issue"].includes(reason);
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: !allowDecision };
-    }
-    if (status === "DECISION_PENDING") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
-    }
-    if (status === "REWINDING" || status === "REWORKING") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") {
-      return { start: true, startJob: true, stop: false, qcHold: false, resume: true, complete: false, changeDrum: false, tooling: false, rewind: true, rework: true, breakdown: false, materialIssue: false, decisionPending: false };
-    }
+    if (status === "COMPLETED") return { start: true, startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "READY") return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "SETUP") return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "QC_HOLD") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "DECISION_PENDING") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
+    if (status === "REWINDING" || status === "REWORKING") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") return { start: true, startJob: true, stop: false, qcHold: false, resume: true, complete: false, changeDrum: false, tooling: false, rewind: true, rework: true, breakdown: false, materialIssue: false, decisionPending: false };
     return { start: true, startJob: true };
-  }, [status, reason, decisionChoice]);
+  }, [status, decisionChoice]);
 
   const modalTitle =
     workflow === "startJob"
@@ -280,8 +280,8 @@ export default function WireDrawing({ onBack, data }: Props) {
           <div className="flex items-center justify-between gap-2">
             <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
             <div className="text-center">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">WIRE DRAWING</div>
-              <div className="text-lg font-black">Wire Drawing Job Card</div>
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">SHEATHING</div>
+              <div className="text-lg font-black">Sheathing Job Card</div>
             </div>
             <button onClick={() => setIsUrdu((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{isUrdu ? "English / اردو" : "اردو / English"}</button>
           </div>
@@ -292,11 +292,11 @@ export default function WireDrawing({ onBack, data }: Props) {
             <div className="grid grid-cols-[1fr_210px] gap-3">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
-                <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "WIRE DRAWING"}</div>
+                <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "SHEATHING"}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
-                  <div className="truncate">Job: {data?.jobId || "DRA-001"}</div>
-                  <div className="truncate">Batch: {data?.process || "Wire Drawing"}</div>
-                  <div className="truncate">WO: {data?.machine || "M-85"}</div>
+                  <div className="truncate">Job: {data?.jobId || "SHE-001"}</div>
+                  <div className="truncate">Batch: {data?.process || "Sheathing"}</div>
+                  <div className="truncate">WO: {data?.machine || "M-92"}</div>
                 </div>
               </div>
               <div>
@@ -314,7 +314,7 @@ export default function WireDrawing({ onBack, data }: Props) {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Machine</div><div className="text-[12px] font-black">M-85</div><div className="text-[10px] text-slate-500">Drawing</div></div>
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Machine</div><div className="text-[12px] font-black">M-92</div><div className="text-[10px] text-slate-500">Sheathing</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Operator</div><div className="text-[12px] font-black">Ali Raza</div><div className="text-[10px] text-slate-500">Supervisor: Ahmed Khan</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Shift</div><div className="text-[12px] font-black">Shift A</div><div className="text-[10px] text-slate-500">18:11</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">QC</div><div className="text-[12px] font-black">OK</div><div className="text-[10px] text-slate-500">Approved</div></div>
@@ -366,14 +366,8 @@ export default function WireDrawing({ onBack, data }: Props) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-slate-200 p-2">
-                <div className="mb-1 text-[11px] font-black">INPUT</div>
-                <div className="truncate text-[11px] font-black">{inputDrumValue || "-"}</div>
-              </div>
-              <div className="rounded-xl border border-slate-200 p-2">
-                <div className="mb-1 text-[11px] font-black">OUTPUT</div>
-                <div className="truncate text-[11px] font-black">{outputDrumValue || "-"}</div>
-              </div>
+              <div className="rounded-xl border border-slate-200 p-2"><div className="mb-1 text-[11px] font-black">INPUT</div><div className="truncate text-[11px] font-black">{inputDrumValue || selectedInputDrum || "-"}</div></div>
+              <div className="rounded-xl border border-slate-200 p-2"><div className="mb-1 text-[11px] font-black">OUTPUT</div><div className="truncate text-[11px] font-black">{outputDrumValue || selectedOutputDrum || "-"}</div></div>
             </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
@@ -414,6 +408,28 @@ export default function WireDrawing({ onBack, data }: Props) {
                 <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
                 <input value={lengthInput} onChange={(e) => setLengthInput(e.target.value)} type="number" className={fieldClassName()} placeholder="Enter length" />
               </label>
+            )}
+            {(workflow === "startJob" || workflow === "changeDrum") && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Input Drum / ان پٹ ڈرم</div>
+                  <select value={inputDrum} onChange={(e) => setInputDrum(e.target.value)} className={fieldClassName()}>
+                    <option value="">Select input drum</option>
+                    {INPUT_DRUM_LOV.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Output Drum / آؤٹ پٹ ڈرم</div>
+                  <select value={outputDrum} onChange={(e) => setOutputDrum(e.target.value)} className={fieldClassName()}>
+                    <option value="">Select output drum</option>
+                    {OUTPUT_DRUM_LOV.map((item, idx) => (
+                      <option key={`${item || "blank"}-${idx}`} value={item}>{item || "-"}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             )}
             {workflow === "tooling" && (
               <label className="block">

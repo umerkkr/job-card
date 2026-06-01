@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import {
   Bell,
@@ -35,22 +36,22 @@ type Status =
   | "RUNNING_REWORK"
   | "COMPLETED";
 
-type ModalMode =
-  | "qcHold"
-  | "changeDrum"
-  | "fault"
-  | "materialIssue"
-  | "decision"
-  | "stop"
-  | "complete"
-  | "rewind"
-  | "rework"
-  | null;
+type ModalMode = string | null;
 
 type DecisionChoice = "rewind" | "rework" | "holdJob" | "deviation" | null;
 type NextAfterRewind = "continue" | "rework";
 
 const ORDER_LENGTH = 145;
+const INPUT_DRUM_LOV = [
+  "M4288/X -00190/2526-##659416--18-JUL-25",
+  "M4212/X -00190/2526-##659446--18-JUL-25",
+  "N4559/X -00190/2526-##659442--18-JUL-25",
+  "L-01/11-2024",
+  "LT24091033- 2",
+];
+const OUTPUT_DRUM_LOV = [
+  "R-848/X -00190/25",
+];
 
 const actionCards: readonly ActionCardData[] = [
   { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
@@ -58,8 +59,9 @@ const actionCards: readonly ActionCardData[] = [
   { key: "stop", title: "STOP", urdu: "روکیں", subtitle: "Reason", tone: "red", icon: Siren },
   { key: "qcHold", title: "QC HOLD", urdu: "QC ہولڈ", subtitle: "Inspect", tone: "amber", icon: ShieldCheck },
   { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
-  { key: "complete", title: "COMPLETE", urdu: "مکمل", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
-  { key: "changeDrum", title: "DRUM", urdu: "ڈرم", subtitle: "Change", tone: "slate", icon: RefreshCw },
+  { key: "complete", title: "COMPLETE", urdu: "جاب مکمل کریں", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
+  { key: "changeDrum", title: "DRUM", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
+  { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
   { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
   { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },
   { key: "breakdown", title: "FAULT", urdu: "خرابی", subtitle: "Breakdown", tone: "red2", icon: Siren },
@@ -109,7 +111,7 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-3">
-      <div className="w-full max-w-3xl rounded-[20px] bg-white p-4 shadow-2xl">
+      <div className="w-[96vw] max-w-4xl rounded-[20px] bg-white p-4 shadow-2xl">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <div className="text-xl font-black">{title}</div>
@@ -129,24 +131,95 @@ function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
 }
 
+type DrumPickerProps = {
+  label: string;
+  helper?: string;
+  items: string[];
+  value: string[];
+  onChange: (value: string[]) => void;
+};
+
+function DrumPicker({ label, helper, items, value, onChange }: DrumPickerProps) {
+  const cleanItems = useMemo(
+    () => Array.from(new Set(items.filter((item) => item && item.trim() !== ""))),
+    [items]
+  );
+
+  const toggleItem = (item: string) => {
+    if (value.includes(item)) {
+      onChange(value.filter((x) => x !== item));
+    } else {
+      onChange([...value, item]);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-3">
+        <div className="text-xs font-black uppercase tracking-wider text-slate-500">
+          {label}
+        </div>
+
+        {helper && (
+          <div className="mt-0.5 text-[11px] font-semibold text-slate-400">
+            {helper}
+          </div>
+        )}
+      </div>
+
+      <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2">
+        <div className="grid gap-2">
+          {cleanItems.map((item) => {
+            const selected = value.includes(item);
+
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => toggleItem(item)}
+                className={`flex min-h-[46px] items-center justify-between rounded-xl border px-3 py-2 text-left text-sm font-black transition ${
+                  selected
+                    ? "border-emerald-400 bg-emerald-50 text-emerald-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span className="truncate">{item}</span>
+                {selected && (
+                  <span className="ml-2 shrink-0 text-emerald-700">✓</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LayingUp({ onLogout }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
   const [setupSeconds, setSetupSeconds] = useState(0);
   const [producedLength, setProducedLength] = useState(0);
-  const [workflow, setWorkflow] = useState<ModalMode>(null);
+  const [workflow, setWorkflow] = useState<any>(null);
+  const [showStartJobModal, setShowStartJobModal] = useState(false);
   const [decisionChoice, setDecisionChoice] = useState<DecisionChoice>(null);
+  const [lockedDecisionAction, setLockedDecisionAction] = useState<"rewind" | "rework" | null>(null);
   const [nextAfterRewind, setNextAfterRewind] = useState<NextAfterRewind>("continue");
+  const [toolingReason, setToolingReason] = useState("Die Linking Size");
   const [reason, setReason] = useState("QC Review");
   const [remarks, setRemarks] = useState("");
   const [lengthInput, setLengthInput] = useState("");
-  const [inputDrum, setInputDrum] = useState("");
-  const [outputDrum, setOutputDrum] = useState("");
+  const [inputDrum, setInputDrum] = useState<string[]>([]);
+  const [outputDrum, setOutputDrum] = useState<string[]>([]);
   const [scanCode, setScanCode] = useState("");
   const [decisionComment, setDecisionComment] = useState("");
   const [stopReason, setStopReason] = useState("Management decision");
   const [events, setEvents] = useState<string[]>([]);
+  const [inputDrumValue, setInputDrumValue] = useState<string[]>([]);
+  const [outputDrumValue, setOutputDrumValue] = useState<string[]>([]);
+  const [liveClock, setLiveClock] = useState(() => new Date());
 
   const statusText = useMemo(() => {
     switch (status) {
@@ -180,6 +253,30 @@ export default function LayingUp({ onLogout }: Props) {
 
   const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
   const setupTimeLabel = `${String(Math.floor(setupSeconds / 60)).padStart(2, "0")}:${String(setupSeconds % 60).padStart(2, "0")}`;
+  const liveClockLabel = liveClock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const isStartJobWorkflow = workflow === "startJob";
+  const modalTitle =
+    workflow === "qcHold"
+      ? "QC Hold"
+      : workflow === "changeDrum"
+        ? "Change Drum"
+        : workflow === "fault"
+          ? "Fault"
+          : workflow === "materialIssue"
+            ? "Material Issue"
+            : workflow === "tooling"
+              ? "Tooling"
+              : workflow === "decision"
+                ? "Decision"
+                : workflow === "stop"
+                  ? "Stop Job"
+                  : isStartJobWorkflow
+                    ? "Start Job"
+                    : workflow === "complete"
+                      ? "Complete Job"
+                      : workflow === "rewind"
+                        ? "Rewind"
+                        : "Rework";
 
   const pushEvent = (msg: string) =>
     setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
@@ -189,15 +286,28 @@ export default function LayingUp({ onLogout }: Props) {
     setReason("QC Review");
     setRemarks("");
     setLengthInput("");
-    setInputDrum("");
-    setOutputDrum("");
+    setInputDrum([]);
+    setOutputDrum([]);
     setScanCode("");
+    setToolingReason("Die Linking Size");
     setDecisionComment("");
     setDecisionChoice(null);
     setNextAfterRewind("continue");
+    if (mode === "changeDrum") {
+      setInputDrum(inputDrumValue);
+      setOutputDrum(outputDrumValue);
+    }
     if (mode === "stop") {
       setReason("Management decision");
       setStopReason("Management decision");
+    }
+    if (mode === "startJob") {
+      setLengthInput("0");
+      setInputDrum([]);
+      setOutputDrum([]);
+      setScanCode("");
+      setRemarks("");
+      setShowStartJobModal(true);
     }
     if (mode === "fault") {
       setReason("Electrical fault");
@@ -205,9 +315,38 @@ export default function LayingUp({ onLogout }: Props) {
     if (mode === "materialIssue") {
       setReason("Material shortage");
     }
+    if (mode === "tooling") {
+      setToolingReason("Die Linking Size");
+    }
   };
 
   const closeWorkflow = () => setWorkflow(null);
+  const closeStartJobModal = () => {
+    setShowStartJobModal(false);
+    setWorkflow(null);
+  };
+
+  const commitStartJob = () => {
+    setInputDrumValue(inputDrum);
+    setOutputDrumValue(outputDrum);
+
+    setStatus("RUNNING");
+    setLockedDecisionAction(null);
+    setProducedLength(0);
+    setLengthInput("0");
+
+    pushEvent(
+      `Start Job committed: ${inputDrum.length > 0 ? inputDrum.join(", ") : "No input drum"
+      } -> ${outputDrum.length > 0 ? outputDrum.join(", ") : "No output drum"
+      }`
+    );
+
+    pushEvent("Meter reading recorded at 0 m");
+    pushEvent(`Setup completed in ${setupTimeLabel}`);
+
+    setShowStartJobModal(false);
+    setWorkflow(null);
+  };
 
   const setLengthFromInput = (value: string) => {
     setLengthInput(value);
@@ -228,7 +367,11 @@ export default function LayingUp({ onLogout }: Props) {
 
     if (workflow === "changeDrum") {
       if (!Number.isNaN(numericLength) && lengthInput.trim()) setProducedLength(Math.max(0, numericLength));
-      pushEvent(`Drum changed ${scanCode ? `(Scan: ${scanCode})` : ""}: ${inputDrum || "IN"} -> ${outputDrum || "OUT"} | ${lengthInput || producedLength} m`);
+      const nextInputDrum = inputDrum.filter((item) => item && item.trim() !== "");
+      const nextOutputDrum = outputDrum.filter((item) => item && item.trim() !== "");
+      if (nextInputDrum.length > 0) setInputDrumValue(nextInputDrum);
+      if (nextOutputDrum.length > 0) setOutputDrumValue(nextOutputDrum);
+      pushEvent(`Drum changed ${scanCode ? `(Scan: ${scanCode})` : ""}: ${nextInputDrum.length ? nextInputDrum.join(", ") : "IN"} -> ${nextOutputDrum.length ? nextOutputDrum.join(", ") : "OUT"} | ${lengthInput || producedLength} m`);
       setStatus("RUNNING");
     }
 
@@ -244,9 +387,17 @@ export default function LayingUp({ onLogout }: Props) {
       pushEvent(`Material issue at ${lengthInput || producedLength} m: ${reason}${remarks ? ` | ${remarks}` : ""}`);
     }
 
+    if (workflow === "tooling") {
+      if (!Number.isNaN(numericLength) && lengthInput.trim()) setProducedLength(Math.max(0, numericLength));
+      setStatus("RUNNING");
+      pushEvent(`Tooling committed at ${lengthInput || producedLength} m: ${toolingReason}${remarks ? ` | ${remarks}` : ""}`);
+    }
+
     if (workflow === "decision") {
       pushEvent(`Decision committed: ${decisionChoice || "none"}${decisionComment ? ` | ${decisionComment}` : ""}`);
+      setLockedDecisionAction(decisionChoice === "rewind" || decisionChoice === "rework" ? decisionChoice : null);
       setStatus("DECISION_PENDING");
+      setWorkflow(null);
     }
 
     if (workflow === "stop") {
@@ -263,12 +414,14 @@ export default function LayingUp({ onLogout }: Props) {
     if (workflow === "rewind") {
       if (!Number.isNaN(numericLength) && lengthInput.trim()) setProducedLength(Math.max(0, numericLength));
       setStatus(nextAfterRewind === "rework" ? "REWORKING" : "REWINDING");
+      setLockedDecisionAction(null);
       pushEvent(`Rewind committed at ${lengthInput || producedLength} m | next: ${nextAfterRewind}`);
     }
 
     if (workflow === "rework") {
       if (!Number.isNaN(numericLength) && lengthInput.trim()) setProducedLength(Math.max(0, numericLength));
       setStatus("REWORKING");
+      setLockedDecisionAction(null);
       pushEvent(`Rework committed at ${lengthInput || producedLength} m${remarks ? ` | ${remarks}` : ""}`);
     }
 
@@ -288,6 +441,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -304,6 +458,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -320,6 +475,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -337,6 +493,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: false,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -355,6 +512,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: false,
         complete: true,
         changeDrum: true,
+        tooling: false,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -372,8 +530,9 @@ export default function LayingUp({ onLogout }: Props) {
         resume: false,
         complete: true,
         changeDrum: true,
-        rewind: decisionChoice !== "rewind",
-        rework: decisionChoice !== "rework",
+        tooling: true,
+        rewind: lockedDecisionAction !== "rewind",
+        rework: lockedDecisionAction !== "rework",
         breakdown: true,
         materialIssue: true,
         decisionPending: false,
@@ -389,6 +548,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: false,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -406,6 +566,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: false,
         complete: true,
         changeDrum: true,
+        tooling: true,
         rewind: true,
         rework: true,
         breakdown: true,
@@ -423,6 +584,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: false,
         changeDrum: false,
+        tooling: false,
         rewind: true,
         rework: true,
         breakdown: false,
@@ -440,6 +602,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: false,
         changeDrum: false,
+        tooling: false,
         rewind: true,
         rework: true,
         breakdown: false,
@@ -457,6 +620,7 @@ export default function LayingUp({ onLogout }: Props) {
         resume: true,
         complete: false,
         changeDrum: false,
+        tooling: false,
         rewind: true,
         rework: true,
         breakdown: false,
@@ -466,12 +630,13 @@ export default function LayingUp({ onLogout }: Props) {
     }
 
     return { start: true, startJob: true };
-  }, [status, stopReason, decisionChoice, nextAfterRewind, isStartup, isSetupActive, isRunning]);
+  }, [status, stopReason, lockedDecisionAction, nextAfterRewind, isStartup, isSetupActive, isRunning]);
 
   const handleAction = (key: ActionKey) => {
     if (key === "start") {
       const settingTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setStatus("SETUP");
+      setLockedDecisionAction(null);
       setSetupSeconds(0);
       setProducedLength(0);
       pushEvent(`Setup Time Started at ${settingTime}`);
@@ -479,14 +644,15 @@ export default function LayingUp({ onLogout }: Props) {
     }
 
     if (key === "startJob") {
-      setStatus("RUNNING");
-      setProducedLength(0);
-      pushEvent(`Setup completed in ${setupTimeLabel}`);
-      pushEvent("Meter reading recorded at 0 m");
-      pushEvent("Job started");
+      setWorkflow("startJob");
+      setShowStartJobModal(true);
+      setLengthInput("0");
+      setInputDrum(inputDrumValue);
+      setOutputDrum(outputDrumValue);
+      setScanCode("");
+      setRemarks("");
       return;
     }
-
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
     if (key === "resume") {
@@ -506,6 +672,7 @@ export default function LayingUp({ onLogout }: Props) {
     }
     if (key === "complete") return openWorkflow("complete");
     if (key === "changeDrum") return openWorkflow("changeDrum");
+    if (key === "tooling") return openWorkflow("tooling");
     if (key === "rewind") return openWorkflow("rewind");
     if (key === "rework") return openWorkflow("rework");
     if (key === "breakdown") return openWorkflow("fault");
@@ -522,6 +689,13 @@ export default function LayingUp({ onLogout }: Props) {
 
     return () => window.clearInterval(timer);
   }, [isSetupActive]);
+
+  useEffect(() => {
+    const clockTimer = window.setInterval(() => setLiveClock(new Date()), 1000);
+    return () => {
+      window.clearInterval(clockTimer);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-2 text-slate-950" style={{ fontFamily: "Ubuntu, sans-serif" }}>
@@ -613,19 +787,19 @@ export default function LayingUp({ onLogout }: Props) {
             <div className="mt-2 grid grid-cols-3 gap-2 text-left">
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-bold text-white/70">Order Length</span>
+                  <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
                   <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
                 </div>
               </div>
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-bold text-white/70">Planned Hours</span>
+                  <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
                   <span className="text-[13px] font-black">3085</span>
                 </div>
               </div>
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-bold text-white/70">Size</span>
+                  <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
                   <span className="text-[13px] font-black">50 mm²</span>
                 </div>
               </div>
@@ -696,17 +870,7 @@ export default function LayingUp({ onLogout }: Props) {
           </section>
         )}
 
-        <section className="grid gap-2 lg:grid-cols-[1fr_1fr_1.15fr]">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate text-[12px] font-black text-amber-900">CHECK EMBOSSING WHEEL & ALIGNMENT</div>
-                <div className="text-[10px] font-semibold text-amber-700">Auto turn-off in</div>
-              </div>
-              <div className="text-[14px] font-black text-amber-700">OFF</div>
-            </div>
-          </div>
-
+        <section className="grid gap-2 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <div>
@@ -714,29 +878,51 @@ export default function LayingUp({ onLogout }: Props) {
                 <div className="text-[10px] text-slate-500">Input and output drums</div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-slate-200 p-2">
-                <div className="mb-1 text-[11px] font-black">INPUT</div>
-                <div className="truncate text-[11px] font-black">DR-2025-0556</div>
-                <div className="truncate text-[11px] font-black">DR-2025-0557</div>
-                <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">Total: 2</div>
+            <div className="rounded-xl border border-slate-200 p-2">
+              <div className="mb-1 text-[11px] font-black">INPUT</div>
+
+              {inputDrumValue.length > 0 &&
+                inputDrumValue.map((drum) => (
+                  <div key={drum} className="truncate text-[11px] font-black">
+                    {drum}
+                  </div>
+                ))}
+
+              <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">
+                Total: {inputDrumValue.length}
               </div>
-              <div className="rounded-xl border border-slate-200 p-2">
-                <div className="mb-1 text-[11px] font-black">OUTPUT</div>
-                <div className="truncate text-[11px] font-black">DR-2025-0778</div>
-                <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">Total: 1</div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-2">
+              <div className="mb-1 text-[11px] font-black">OUTPUT</div>
+
+              {outputDrumValue.length > 0 &&
+                outputDrumValue.map((drum) => (
+                  <div key={drum} className="truncate text-[11px] font-black">
+                    {drum}
+                  </div>
+                ))}
+
+              <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">
+                Total: {outputDrumValue.length}
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-1 text-[12px] font-black">Event Log</div>
-            <div className="grid gap-0.5">
-              {events.slice(0, 3).map((entry) => (
-                <div key={entry} className="truncate text-[10px] font-semibold text-slate-600">
-                  {entry}
-                </div>
-              ))}
+            <div className="max-h-40 overflow-y-auto pr-1">
+              <div className="grid gap-0.5">
+                {events.length === 0 ? (
+                  <div className="text-[10px] font-semibold text-slate-400">No events yet.</div>
+                ) : (
+                  events.map((entry) => (
+                    <div key={entry} className="text-[10px] font-semibold text-slate-600">
+                      {entry}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -751,9 +937,9 @@ export default function LayingUp({ onLogout }: Props) {
             </div>
             <div className="flex items-center justify-end gap-2">
               <span>
-                LAST SYNC: <b>11:28 AM</b>
+                LIVE CLOCK: <b>{liveClockLabel}</b>
               </span>
-              <button onClick={() => pushEvent("Refreshed")} className="grid h-7 w-7 place-items-center rounded-full border border-slate-200">
+              <button onClick={() => pushEvent("Refresh clicked")} className="grid h-7 w-7 place-items-center rounded-full border border-slate-200">
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -761,38 +947,78 @@ export default function LayingUp({ onLogout }: Props) {
         </footer>
       </div>
 
-      {workflow && (
+      {showStartJobModal && (
+        <Modal title="Start Job" sub="Enter drums and confirm the zero meter reading." onClose={closeStartJobModal}>
+          <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <DrumPicker
+                label="Input Drum / ان پٹ ڈرم"
+                helper="Select one or more input drums"
+                items={INPUT_DRUM_LOV}
+                value={inputDrum}
+                onChange={setInputDrum}
+              />
+
+              <DrumPicker
+                label="Output Drum / آؤٹ پٹ ڈرم"
+                helper="Select one or more output drums"
+                items={OUTPUT_DRUM_LOV}
+                value={outputDrum}
+                onChange={setOutputDrum}
+              />
+            </div>
+
+            <label className="flex flex-col">
+              <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">
+                Meter Reading / میٹر ریڈنگ
+              </div>
+              <input value="0" readOnly className={fieldClassName()} />
+            </label>
+
+            <button onClick={commitStartJob} className="rounded-2xl bg-green-700 py-3 font-black text-white">
+              Commit
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {workflow && workflow !== "startJob" && (
         <Modal
-          title={
-            workflow === "qcHold"
-              ? "QC Hold"
-              : workflow === "changeDrum"
-                ? "Change Drum"
-                : workflow === "fault"
-                  ? "Fault"
-                  : workflow === "materialIssue"
-                    ? "Material Issue"
-                    : workflow === "decision"
-                      ? "Decision"
-                      : workflow === "stop"
-                        ? "Stop Job"
-                        : workflow === "complete"
-                          ? "Complete Job"
-                          : workflow === "rewind"
-                            ? "Rewind"
-                            : "Rework"
-          }
+          title={modalTitle}
           sub="Fill the fields and commit the action."
           onClose={closeWorkflow}
         >
           <div className="grid gap-4">
-            {(workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop" || workflow === "complete" || workflow === "rewind" || workflow === "rework") && (
+            {(isStartJobWorkflow || workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop" || workflow === "complete" || workflow === "rewind" || workflow === "rework") && (
               <label className="block">
                 <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">
                   {workflow === "complete" || workflow === "rewind" || workflow === "rework" ? "Length (m)" : "Length (m)"}
                 </div>
                 <input value={lengthInput} onChange={(e) => setLengthFromInput(e.target.value)} type="number" className={fieldClassName()} placeholder="Enter length" />
               </label>
+            )}
+
+            {isStartJobWorkflow && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <DrumPicker
+                  label="Input Drum / ان پٹ ڈرم"
+                  helper="Select one or more input drums"
+                  items={INPUT_DRUM_LOV}
+                  value={inputDrum}
+                  onChange={setInputDrum}
+                />
+                <DrumPicker
+                  label="Output Drum / آؤٹ پٹ ڈرم"
+                  helper="Select one or more output drums"
+                  items={OUTPUT_DRUM_LOV}
+                  value={outputDrum}
+                  onChange={setOutputDrum}
+                />
+                <label className="block md:col-span-2">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Meter Reading / میٹر ریڈنگ</div>
+                  <input value="0" readOnly className={fieldClassName()} />
+                </label>
+              </div>
             )}
 
             {(workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop") && (
@@ -813,29 +1039,34 @@ export default function LayingUp({ onLogout }: Props) {
                   {workflow === "materialIssue" && (
                     <>
                       <option value="Material shortage">Material shortage</option>
-                      <option value="Wrong spool">Wrong spool</option>
+                      <option value="Wrong spool">un identified kundies</option>
+                      <option value="Wrong spool">Wrong Spool</option>
+                      <option value="Wrong spool">No Feed</option>
+                      <option value="Wrong spool">Quality Issues</option>
                     </>
                   )}
                   {workflow === "stop" && (
                     <>
                       <option value="Management decision">Management decision</option>
-                      <option value="Setup issue">Setup issue</option>
+                      <option value="Setup issue">Prayer Time</option>
+                      <option value="Setup issue">Meal Time</option>
+                      <option value="Setup issue">Purging /Color Change</option>
                     </>
                   )}
                 </select>
               </label>
             )}
 
-            {workflow === "stop" && (
+            {workflow === "tooling" && (
               <label className="block">
-                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Stop Reason</div>
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Tooling Reason / وجہ</div>
                 <select
-                  value={stopReason}
-                  onChange={(e) => setStopReason(e.target.value)}
+                  value={toolingReason}
+                  onChange={(e) => setToolingReason(e.target.value)}
                   className={fieldClassName()}
                 >
-                  <option value="Management decision">Management decision</option>
-                  <option value="Setup issue">Setup issue</option>
+                  <option value="Die Linking Size">Die Linking Size / ڈائی لنکنگ سائز</option>
+                  <option value="Die/Core Change">Die/Core Change / ڈائی / کور چینج</option>
                 </select>
               </label>
             )}
@@ -853,21 +1084,42 @@ export default function LayingUp({ onLogout }: Props) {
 
             {workflow === "changeDrum" && (
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="block">
-                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Input Drum</div>
-                  <input value={inputDrum} onChange={(e) => setInputDrum(e.target.value)} className={fieldClassName()} placeholder="Scan / enter input drum" />
-                </label>
-                <label className="block">
-                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Output Drum</div>
-                  <input value={outputDrum} onChange={(e) => setOutputDrum(e.target.value)} className={fieldClassName()} placeholder="Scan / enter output drum" />
-                </label>
+                <DrumPicker
+                  label="Input Drum / ان پٹ ڈرم"
+                  helper="Update one or more input drums"
+                  items={INPUT_DRUM_LOV}
+                  value={inputDrum}
+                  onChange={setInputDrum}
+                />
+                <DrumPicker
+                  label="Output Drum / آؤٹ پٹ ڈرم"
+                  helper="Update one or more output drums"
+                  items={OUTPUT_DRUM_LOV}
+                  value={outputDrum}
+                  onChange={setOutputDrum}
+                />
                 <label className="block">
                   <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Scan</div>
                   <input value={scanCode} onChange={(e) => setScanCode(e.target.value)} className={fieldClassName()} placeholder="Scan code" />
                 </label>
                 <label className="block">
-                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m)</div>
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
                   <input value={lengthInput} onChange={(e) => setLengthFromInput(e.target.value)} type="number" className={fieldClassName()} placeholder="Enter length" />
+                </label>
+              </div>
+            )}
+
+            {workflow === "tooling" && (
+              <div className="grid gap-4">
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
+                  <input
+                    value={lengthInput}
+                    onChange={(e) => setLengthFromInput(e.target.value)}
+                    type="number"
+                    className={fieldClassName()}
+                    placeholder="Enter length"
+                  />
                 </label>
               </div>
             )}

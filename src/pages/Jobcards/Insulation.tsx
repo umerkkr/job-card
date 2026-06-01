@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, BookOpenText, CheckCircle2, Clock3, LayoutGrid, Plus, RefreshCw, RotateCcw, ShieldCheck, Siren, X } from "lucide-react";
+import { CheckCircle2, LayoutGrid, RefreshCw, RotateCcw, ShieldCheck, Siren, X } from "lucide-react";
 import LayingUpActionPanel, { type ActionCardData, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
-type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "COMPLETED";
-type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "fault" | "materialIssue" | "decision" | "rewind" | "rework" | "tooling" | null;
+type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "COMPLETED";
+type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "fault" | null;
 
-const ORDER_LENGTH = 500;
+const ORDER_LENGTH = 1000;
+const PROCESS_KEY = "INSULATION";
+const PROCESS_TITLE = "Insulation";
+const DEFAULT_JOB_ID = "INS-001";
+const DEFAULT_MACHINE = "M-88";
+const DEFAULT_MACHINE_SUB = "Insulation";
 
 const actionCards: readonly ActionCardData[] = [
   { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
@@ -16,12 +21,7 @@ const actionCards: readonly ActionCardData[] = [
   { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
   { key: "complete", title: "COMPLETE", urdu: "مکمل", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
   { key: "changeDrum", title: "DRUM", urdu: "ڈرم", subtitle: "Change", tone: "slate", icon: RefreshCw },
-  { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
-  { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
-  { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },
   { key: "breakdown", title: "FAULT", urdu: "خرابی", subtitle: "Breakdown", tone: "red2", icon: Siren },
-  { key: "materialIssue", title: "MATERIAL", urdu: "میٹریل", subtitle: "Issue", tone: "amber2", icon: Bell },
-  { key: "decisionPending", title: "DECISION", urdu: "فیصلہ", subtitle: "Supervisor", tone: "brown", icon: Clock3 },
 ] as const;
 
 function fieldClassName() {
@@ -56,7 +56,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function WireDrawing({ onBack, data }: Props) {
+export default function Insulation({ onBack, data }: Props) {
   const [isUrdu, setIsUrdu] = useState(true);
   const [status, setStatus] = useState<Status>("READY");
   const [workflow, setWorkflow] = useState<ModalMode>(null);
@@ -72,44 +72,30 @@ export default function WireDrawing({ onBack, data }: Props) {
   const [setupSeconds, setSetupSeconds] = useState(0);
   const [producedLength, setProducedLength] = useState(0);
   const [embossingActive, setEmbossingActive] = useState(true);
-  const [decisionChoice, setDecisionChoice] = useState<"rewind" | "rework" | "holdJob" | "deviation" | null>(null);
-  const [nextAfterRewind, setNextAfterRewind] = useState<"continue" | "rework">("continue");
-  const [toolingReason, setToolingReason] = useState("Die Linking Size");
 
   const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
-  const statusText = useMemo(() => {
-    switch (status) {
-      case "SETUP":
-        return "SETUP";
-      case "RUNNING":
-        return "RUNNING";
-      case "QC_HOLD":
-        return "QC HOLD";
-      case "STOPPED":
-        return "STOPPED";
-      case "FAULT":
-        return "FAULT";
-      case "MATERIAL_ISSUE":
-        return "MATERIAL ISSUE";
-      case "DECISION_PENDING":
-        return "DECISION";
-      case "REWINDING":
-        return "REWINDING";
-      case "REWORKING":
-        return "REWORKING";
-      case "RUNNING_REWIND":
-      case "RUNNING_REWORK":
-        return "RUNNING";
-      case "COMPLETED":
-        return "COMPLETED";
-      default:
-        return "READY";
-    }
-  }, [status]);
+  const statusText = useMemo(
+    () =>
+      status === "RUNNING"
+        ? "RUNNING"
+        : status === "SETUP"
+          ? "SETUP"
+          : status === "QC_HOLD"
+            ? "QC HOLD"
+            : status === "STOPPED"
+              ? "STOPPED"
+              : status === "FAULT"
+                ? "FAULT"
+                : status === "COMPLETED"
+                  ? "COMPLETED"
+                  : "READY",
+    [status]
+  );
   const setupTimeLabel = `${String(Math.floor(setupSeconds / 60)).padStart(2, "0")}:${String(setupSeconds % 60).padStart(2, "0")}`;
   const liveClockLabel = liveClock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-  const pushEvent = (msg: string) => setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
+  const pushEvent = (msg: string) =>
+    setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => setLiveClock(new Date()), 1000);
@@ -131,9 +117,7 @@ export default function WireDrawing({ onBack, data }: Props) {
     setReason(mode === "fault" ? "Electrical fault" : mode === "stop" ? "Management decision" : "QC Review");
     setRemarks("");
     setLengthInput(mode === "startJob" ? "0" : "");
-    setDecisionChoice(null);
-    setNextAfterRewind("continue");
-    setToolingReason("Die Linking Size");
+
     if (mode === "startJob" || mode === "changeDrum") {
       setInputDrum(inputDrumValue);
       setOutputDrum(outputDrumValue);
@@ -143,8 +127,10 @@ export default function WireDrawing({ onBack, data }: Props) {
   const commitStartJob = () => {
     const nextInputDrum = inputDrum.trim();
     const nextOutputDrum = outputDrum.trim();
+
     if (nextInputDrum) setInputDrumValue(nextInputDrum);
     if (nextOutputDrum) setOutputDrumValue(nextOutputDrum);
+
     setStatus("RUNNING");
     setProducedLength(0);
     setLengthInput("0");
@@ -174,21 +160,6 @@ export default function WireDrawing({ onBack, data }: Props) {
     } else if (workflow === "fault") {
       setStatus("FAULT");
       pushEvent(`Fault logged at ${lengthInput || producedLength} m: ${reason}${remarks ? ` | ${remarks}` : ""}`);
-    } else if (workflow === "materialIssue") {
-      setStatus("MATERIAL_ISSUE");
-      pushEvent(`Material issue logged at ${lengthInput || producedLength} m: ${reason}${remarks ? ` | ${remarks}` : ""}`);
-    } else if (workflow === "decision") {
-      setStatus("DECISION_PENDING");
-      pushEvent(`Decision committed: ${decisionChoice || "none"}${remarks ? ` | ${remarks}` : ""}`);
-    } else if (workflow === "rewind") {
-      setStatus(nextAfterRewind === "rework" ? "REWORKING" : "REWINDING");
-      pushEvent(`Rewind committed at ${lengthInput || producedLength} m | next: ${nextAfterRewind}`);
-    } else if (workflow === "rework") {
-      setStatus("REWORKING");
-      pushEvent(`Rework committed at ${lengthInput || producedLength} m${remarks ? ` | ${remarks}` : ""}`);
-    } else if (workflow === "tooling") {
-      setStatus("RUNNING");
-      pushEvent(`Tooling committed at ${lengthInput || producedLength} m: ${toolingReason}${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "complete") {
       setStatus("COMPLETED");
       pushEvent(`Job completed at ${lengthInput || producedLength} m${remarks ? ` | ${remarks}` : ""}`);
@@ -205,52 +176,34 @@ export default function WireDrawing({ onBack, data }: Props) {
       pushEvent("Setup Time Started");
       return;
     }
+
     if (key === "startJob") return openWorkflow("startJob");
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
+    if (key === "complete") return openWorkflow("complete");
+    if (key === "changeDrum") return openWorkflow("changeDrum");
+    if (key === "breakdown") return openWorkflow("fault");
     if (key === "resume") {
       setStatus("RUNNING");
       pushEvent("Resume pressed");
-      return;
     }
-    if (key === "complete") return openWorkflow("complete");
-    if (key === "changeDrum") return openWorkflow("changeDrum");
-    if (key === "tooling") return openWorkflow("tooling");
-    if (key === "rewind") return openWorkflow("rewind");
-    if (key === "rework") return openWorkflow("rework");
-    if (key === "breakdown") return openWorkflow("fault");
-    if (key === "materialIssue") return openWorkflow("materialIssue");
-    if (key === "decisionPending") return openWorkflow("decision");
   };
 
   const disabledKeys = useMemo<Partial<Record<ActionKey, boolean>>>(() => {
     if (status === "COMPLETED") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+      return { start: true, startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
     }
     if (status === "READY") {
-      return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+      return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
     }
     if (status === "SETUP") {
-      return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+      return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
     }
-    if (status === "QC_HOLD") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "QC_HOLD" || status === "STOPPED" || status === "FAULT") {
+      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, breakdown: true };
     }
-    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") {
-      const allowDecision = status !== "STOPPED" || ["Management decision", "Setup issue"].includes(reason);
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: !allowDecision };
-    }
-    if (status === "DECISION_PENDING") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
-    }
-    if (status === "REWINDING" || status === "REWORKING") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    }
-    if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") {
-      return { start: true, startJob: true, stop: false, qcHold: false, resume: true, complete: false, changeDrum: false, tooling: false, rewind: true, rework: true, breakdown: false, materialIssue: false, decisionPending: false };
-    }
-    return { start: true, startJob: true };
-  }, [status, reason, decisionChoice]);
+    return { start: true, startJob: true, resume: true };
+  }, [status]);
 
   const modalTitle =
     workflow === "startJob"
@@ -263,15 +216,7 @@ export default function WireDrawing({ onBack, data }: Props) {
             ? "QC Hold / QC ہولڈ"
             : workflow === "changeDrum"
               ? "Change Drum / ڈرم تبدیل"
-              : workflow === "tooling"
-                ? "Tooling / ٹولنگ"
-                : workflow === "decision"
-                  ? "Decision / فیصلہ"
-                  : workflow === "rewind"
-                    ? "Rewind / ری وائنڈ"
-                    : workflow === "rework"
-                      ? "Rework / ری ورک"
-                      : "Fault / خرابی";
+              : "Fault / خرابی";
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-2 text-slate-950" style={{ fontFamily: "Ubuntu, sans-serif" }}>
@@ -280,10 +225,12 @@ export default function WireDrawing({ onBack, data }: Props) {
           <div className="flex items-center justify-between gap-2">
             <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
             <div className="text-center">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">WIRE DRAWING</div>
-              <div className="text-lg font-black">Wire Drawing Job Card</div>
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">{PROCESS_KEY}</div>
+              <div className="text-lg font-black">{PROCESS_TITLE} Job Card</div>
             </div>
-            <button onClick={() => setIsUrdu((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{isUrdu ? "English / اردو" : "اردو / English"}</button>
+            <button onClick={() => setIsUrdu((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">
+              {isUrdu ? "English / اردو" : "اردو / English"}
+            </button>
           </div>
         </header>
 
@@ -292,11 +239,11 @@ export default function WireDrawing({ onBack, data }: Props) {
             <div className="grid grid-cols-[1fr_210px] gap-3">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
-                <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "WIRE DRAWING"}</div>
+                <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || PROCESS_KEY}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
-                  <div className="truncate">Job: {data?.jobId || "DRA-001"}</div>
-                  <div className="truncate">Batch: {data?.process || "Wire Drawing"}</div>
-                  <div className="truncate">WO: {data?.machine || "M-85"}</div>
+                  <div className="truncate">Job: {data?.jobId || DEFAULT_JOB_ID}</div>
+                  <div className="truncate">Batch: {data?.process || PROCESS_TITLE}</div>
+                  <div className="truncate">WO: {data?.machine || DEFAULT_MACHINE}</div>
                 </div>
               </div>
               <div>
@@ -313,8 +260,9 @@ export default function WireDrawing({ onBack, data }: Props) {
               </div>
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Machine</div><div className="text-[12px] font-black">M-85</div><div className="text-[10px] text-slate-500">Drawing</div></div>
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Machine</div><div className="text-[12px] font-black">{DEFAULT_MACHINE}</div><div className="text-[10px] text-slate-500">{DEFAULT_MACHINE_SUB}</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Operator</div><div className="text-[12px] font-black">Ali Raza</div><div className="text-[10px] text-slate-500">Supervisor: Ahmed Khan</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Shift</div><div className="text-[12px] font-black">Shift A</div><div className="text-[10px] text-slate-500">18:11</div></div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">QC</div><div className="text-[12px] font-black">OK</div><div className="text-[10px] text-slate-500">Approved</div></div>
@@ -332,13 +280,13 @@ export default function WireDrawing({ onBack, data }: Props) {
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
                 ["Input Lot / Drum No", "-"],
-                ["Length (m)", "-"],
+                ["Length", "-"],
                 ["Color", "-"],
-                ["Material", "-"],
-                ["Thickness", "-"],
+                ["Insulation thickness", "-"],
+                ["Core size", "-"],
                 ["OD", "-"],
                 ["Spark test", "-"],
-                ["Line speed", "-"],
+                ["Line speed", "-"]
               ].map(([label, value]) => <InfoBox key={label} label={label} value={value} />)}
             </div>
           </div>
@@ -358,6 +306,7 @@ export default function WireDrawing({ onBack, data }: Props) {
               <div className={`text-[14px] font-black ${embossingActive ? "text-emerald-700" : "text-amber-700"}`}>{embossingActive ? "ON" : "OFF"}</div>
             </div>
           </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <div>
@@ -369,13 +318,16 @@ export default function WireDrawing({ onBack, data }: Props) {
               <div className="rounded-xl border border-slate-200 p-2">
                 <div className="mb-1 text-[11px] font-black">INPUT</div>
                 <div className="truncate text-[11px] font-black">{inputDrumValue || "-"}</div>
+                <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">Total: {inputDrumValue ? 1 : 0}</div>
               </div>
               <div className="rounded-xl border border-slate-200 p-2">
                 <div className="mb-1 text-[11px] font-black">OUTPUT</div>
                 <div className="truncate text-[11px] font-black">{outputDrumValue || "-"}</div>
+                <div className="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-center text-[10px] font-black">Total: {outputDrumValue ? 1 : 0}</div>
               </div>
             </div>
           </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-1 text-[12px] font-black">Event Log</div>
             <div className="max-h-40 overflow-y-auto pr-1">
@@ -383,11 +335,7 @@ export default function WireDrawing({ onBack, data }: Props) {
                 {events.length === 0 ? (
                   <div className="text-[10px] font-semibold text-slate-400">No events yet.</div>
                 ) : (
-                  events.map((entry) => (
-                    <div key={entry} className="text-[10px] font-semibold text-slate-600">
-                      {entry}
-                    </div>
-                  ))
+                  events.map((entry) => <div key={entry} className="text-[10px] font-semibold text-slate-600">{entry}</div>)
                 )}
               </div>
             </div>
@@ -407,43 +355,54 @@ export default function WireDrawing({ onBack, data }: Props) {
       </div>
 
       {workflow && (
-        <Modal title={modalTitle} sub="Fill the fields and commit the action." onClose={() => setWorkflow(null)}>
+        <Modal title={modalTitle} sub={workflow === "startJob" ? "Enter drums and confirm the zero meter reading." : "Fill the fields and commit the action."} onClose={() => setWorkflow(null)}>
           <div className="grid gap-4">
-            {(workflow === "startJob" || workflow === "changeDrum" || workflow === "tooling" || workflow === "rewind" || workflow === "rework" || workflow === "complete" || workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop") && (
+            {(workflow === "startJob" || workflow === "changeDrum") && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Input Drum / ان پٹ ڈرم</div>
+                  <input value={inputDrum} onChange={(e) => setInputDrum(e.target.value)} className={fieldClassName()} placeholder="Enter input drum" />
+                </label>
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Output Drum / آؤٹ پٹ ڈرم</div>
+                  <input value={outputDrum} onChange={(e) => setOutputDrum(e.target.value)} className={fieldClassName()} placeholder="Enter output drum" />
+                </label>
+              </div>
+            )}
+
+            {workflow === "startJob" && (
               <label className="block">
-                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
-                <input value={lengthInput} onChange={(e) => setLengthInput(e.target.value)} type="number" className={fieldClassName()} placeholder="Enter length" />
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Meter Reading / میٹر ریڈنگ</div>
+                <input value="0" readOnly className={fieldClassName()} />
               </label>
             )}
-            {workflow === "tooling" && (
+
+            {workflow !== "startJob" && (
               <label className="block">
-                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Tooling Reason / وجہ</div>
-                <select value={toolingReason} onChange={(e) => setToolingReason(e.target.value)} className={fieldClassName()}>
-                  <option value="Die Linking Size">Die Linking Size / ڈائی لنکنگ سائز</option>
-                  <option value="Die/Core Change">Die/Core Change / ڈائی / کور چینج</option>
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
+                <input value={lengthInput} onChange={(e) => setLengthInput(e.target.value)} type="number" className={fieldClassName()} />
+              </label>
+            )}
+
+            {(workflow === "qcHold" || workflow === "stop" || workflow === "fault") && (
+              <label className="block">
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Reason / وجہ</div>
+                <select value={reason} onChange={(e) => setReason(e.target.value)} className={fieldClassName()}>
+                  <option value="QC Review">QC Review / QC ریویو</option>
+                  <option value="Management decision">Management decision / مینجمنٹ فیصلہ</option>
+                  <option value="Electrical fault">Electrical fault / برقی خرابی</option>
+                  <option value="Mechanical fault">Mechanical fault / مکینیکل خرابی</option>
                 </select>
               </label>
             )}
-            {workflow === "decision" && (
-              <div className="grid gap-2 md:grid-cols-4">
-                {[
-                  { key: "rewind", label: "Send to Rewind" },
-                  { key: "rework", label: "Send to Rework" },
-                  { key: "holdJob", label: "Hold Job" },
-                  { key: "deviation", label: "Deviation" },
-                ].map((item) => (
-                  <button key={item.key} type="button" onClick={() => setDecisionChoice(item.key as any)} className={`rounded-2xl border px-4 py-3 text-left font-black ${decisionChoice === item.key ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-slate-50"}`}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {(workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop" || workflow === "complete" || workflow === "rewind" || workflow === "rework" || workflow === "decision" || workflow === "tooling") && (
+
+            {workflow !== "startJob" && (
               <label className="block">
                 <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Remarks / ریمارکس</div>
                 <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} className="min-h-[96px] w-full rounded-2xl border border-slate-200 p-4 font-bold outline-none focus:border-emerald-400" />
               </label>
             )}
+
             <button onClick={workflow === "startJob" ? commitStartJob : finalize} className="rounded-2xl bg-green-700 py-3 font-black text-white">
               Commit / محفوظ کریں
             </button>

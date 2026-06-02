@@ -45,7 +45,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function Insulation({ onBack, data, onLogout }: Props) {
+export default function Insulation({ data, onLogout }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
@@ -64,7 +64,6 @@ export default function Insulation({ onBack, data, onLogout }: Props) {
   const [embossingActive, setEmbossingActive] = useState(true);
 
   const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
-  console.log(onBack)
   const statusText = useMemo(
     () =>
       status === "RUNNING"
@@ -87,7 +86,7 @@ export default function Insulation({ onBack, data, onLogout }: Props) {
     setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
 
   useEffect(() => {
-    const embossTimer = window.setInterval(() => setEmbossingActive((prev) => !prev), 605 * 60 * 100000);
+    const embossTimer = window.setInterval(() => setEmbossingActive((prev) => !prev), 5 * 60 * 1000);
     return () => {
       window.clearInterval(embossTimer);
     };
@@ -184,19 +183,90 @@ export default function Insulation({ onBack, data, onLogout }: Props) {
   };
 
   const disabledKeys = useMemo<Partial<Record<ActionKey, boolean>>>(() => {
+    const unsupportedActions = {
+      tooling: true,
+      rewind: true,
+      rework: true,
+      materialIssue: true,
+      decisionPending: true,
+    };
+
     if (status === "COMPLETED") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
+      return {
+        ...unsupportedActions,
+        start: true,
+        startJob: true,
+        stop: true,
+        qcHold: true,
+        resume: true,
+        complete: true,
+        changeDrum: true,
+        breakdown: true,
+      };
     }
+
     if (status === "READY") {
-      return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
+      return {
+        ...unsupportedActions,
+        start: false,
+        startJob: true,
+        stop: true,
+        qcHold: true,
+        resume: true,
+        complete: true,
+        changeDrum: true,
+        breakdown: true,
+      };
     }
+
     if (status === "SETUP") {
-      return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, breakdown: true };
+      return {
+        ...unsupportedActions,
+        start: true,
+        startJob: false,
+        stop: true,
+        qcHold: true,
+        resume: true,
+        complete: true,
+        changeDrum: true,
+        breakdown: true,
+      };
     }
+
     if (status === "QC_HOLD" || status === "STOPPED" || status === "FAULT") {
-      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, breakdown: true };
+      return {
+        ...unsupportedActions,
+        start: true,
+        startJob: true,
+        stop: true,
+        qcHold: true,
+        resume: false,
+        complete: true,
+        changeDrum: true,
+        breakdown: true,
+      };
     }
-    return { start: true, startJob: true, resume: true };
+
+    if (status === "RUNNING") {
+      return {
+        ...unsupportedActions,
+        start: true,
+        startJob: true,
+        stop: false,
+        qcHold: false,
+        resume: true,
+        complete: false,
+        changeDrum: false,
+        breakdown: false,
+      };
+    }
+
+    return {
+      ...unsupportedActions,
+      start: true,
+      startJob: true,
+      resume: true,
+    };
   }, [status]);
 
   const modalTitle =

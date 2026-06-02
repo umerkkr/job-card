@@ -196,7 +196,7 @@ function DrumPicker({ label, helper, items, value, onChange }: DrumPickerProps) 
   );
 }
 
-export default function LayingUp({ onLogout }: Props) {
+export default function LayingUp({ onBack, onLogout }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
@@ -718,6 +718,13 @@ export default function LayingUp({ onLogout }: Props) {
         <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+              >
+                {"<-"} Back
+              </button>
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
 

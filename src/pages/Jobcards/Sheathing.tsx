@@ -115,7 +115,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
   const pushEvent = (msg: string) => setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
 
   useEffect(() => {
-    const embossTimer = window.setInterval(() => setEmbossingActive((prev) => !prev), 6000);
+    const embossTimer = window.setInterval(() => setEmbossingActive((prev) => !prev), 5 * 60 * 1000);
     return () => {
       window.clearInterval(embossTimer);
     };
@@ -270,6 +270,13 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
         <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+              >
+                {"<-"} Back
+              </button>
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
 
@@ -394,11 +401,11 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
               {[
                 ["Input Lot / Drum No", inputDrumValue || "-"],
                 ["Length (m)", producedLength ? producedLength.toFixed(1) : "-"],
-                ["Color", data?.color || "1"],
-                ["Lay Length (m)", data?.layLength || String(ORDER_LENGTH)],
-                ["P/P tape size", data?.tapeSize || "4 mm"],
-                ["Overlap", data?.overlap || "4 mm"],
-                ["Lay direction", data?.layDirection || "RH"],
+                ["Color", data?.color || "Black"],
+                // ["Lay Length (m)", data?.layLength || String(ORDER_LENGTH)],
+                // ["P/P tape size", data?.tapeSize || "4 mm"],
+                // ["Overlap", data?.overlap || "4 mm"],
+                // ["Lay direction", data?.layDirection || "RH"],
                 ["OD", data?.od || "24.25 mm"],
               ].map(([label, value]) => <InfoBox key={label} label={label} value={value} />)}
             </div>

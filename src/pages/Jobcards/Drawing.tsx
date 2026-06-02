@@ -265,6 +265,13 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
         <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+              >
+                {"<-"} Back
+              </button>
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
 
@@ -388,9 +395,9 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
                 ["Spool No", inputDrumValue || "-"],
-                ["Output Spool", outputDrumValue || "-"],
-                ["Length (m)", producedLength ? producedLength.toFixed(1) : "-"],
-                ["Material", data?.process || "Wire Drawing"],
+                ["Total spool Qty", outputDrumValue || "1 x 36 x 1444.6698"],
+                ["Length (m)", producedLength ? producedLength.toFixed(1) : "2011.279"],
+                ["Packing Standards",  "630mm (H/ Blue)"],
                 ["Machine", data?.machine || "M-85"],
                 ["Crew", crewNo || "N/A"],
                 ["Shift", "Shift A"],

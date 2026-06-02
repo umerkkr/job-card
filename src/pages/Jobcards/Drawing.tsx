@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, LogOut, RefreshCw, X } from "lucide-react";
+import { BookOpenText, LayoutGrid, LogOut, RefreshCw, UserCircle2, X } from "lucide-react";
 import LayingUpActionPanel, { STANDARD_ACTION_CARDS, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
@@ -43,6 +43,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 }
 
 export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
+  const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
   const [workflow, setWorkflow] = useState<ModalMode>(null);
@@ -266,19 +267,58 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
             <div className="flex min-w-0 items-center gap-2">
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
-            <div className="text-center">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">WIRE DRAWING</div>
-              <div className="text-lg font-black">Wire Drawing Job Card</div>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
-              <button onClick={() => setShowInstructions((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">Instructions</button>
-              <button onClick={() => pushEvent("Refresh clicked")} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
+
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-[13px] font-black tracking-tight">WIRE DRAWING</div>
+
+            <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-full border border-amber-700 bg-amber-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm"
+              >
+                ⌛ {statusText}
+              </button>
+              <button onClick={() => pushEvent("Refreshed")} className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white">
                 <RefreshCw className="h-4 w-4" />
               </button>
-              <button onClick={onLogout} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
-                <LogOut className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={() => setShowInstructions((v) => !v)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm"
+              >
+                <BookOpenText className="h-4 w-4" />
+                Instructions
               </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((v) => !v)}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white shadow-sm"
+                  aria-label="Profile menu"
+                >
+                  <UserCircle2 className="h-5 w-5 text-slate-700" />
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute right-0 top-10 z-40 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div className="border-b border-slate-100 px-3 py-2">
+                      <div className="text-[11px] font-black uppercase tracking-wide text-slate-500">Account</div>
+                      <div className="text-[13px] font-black text-slate-950">Operator</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onLogout?.();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -435,13 +475,39 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
       </div>
 
       {workflow && (
-        <Modal title={modalTitle} sub="Fill the fields and commit the action." onClose={() => setWorkflow(null)}>
+        <Modal
+          title={modalTitle}
+          sub={workflow === "startJob" ? "Enter input/output spool and confirm the zero meter reading." : "Fill the fields and commit the action."}
+          onClose={() => setWorkflow(null)}
+        >
           <div className="grid gap-4">
             {(workflow === "startJob" || workflow === "changeDrum" || workflow === "tooling" || workflow === "rewind" || workflow === "rework" || workflow === "complete" || workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop") && (
               <label className="block">
-                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Length (m) / لمبائی</div>
-                <input value={lengthInput} onChange={(e) => setLengthInput(e.target.value)} type="number" className={fieldClassName()} placeholder="Enter length" />
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">{workflow === "startJob" ? "Meter Reading / میٹر ریڈنگ" : "Length (m) / لمبائی"}</div>
+                <input value={lengthInput} onChange={(e) => setLengthInput(e.target.value)} type="number" className={fieldClassName()} placeholder={workflow === "startJob" ? "Enter meter reading" : "Enter length"} />
               </label>
+            )}
+            {(workflow === "startJob" || workflow === "changeDrum") && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Input Spool / ان پٹ سپول</div>
+                  <input
+                    value={inputDrum}
+                    onChange={(e) => setInputDrum(e.target.value)}
+                    className={fieldClassName()}
+                    placeholder="Enter input spool"
+                  />
+                </label>
+                <label className="block">
+                  <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Output Spool / آؤٹ پٹ سپول</div>
+                  <input
+                    value={outputDrum}
+                    onChange={(e) => setOutputDrum(e.target.value)}
+                    className={fieldClassName()}
+                    placeholder="Enter output spool"
+                  />
+                </label>
+              </div>
             )}
             {workflow === "tooling" && (
               <label className="block">

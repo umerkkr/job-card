@@ -42,7 +42,7 @@ export const STANDARD_ACTION_CARDS: readonly ActionCardData[] = [
   { key: "qcHold", title: "QC HOLD", urdu: "QC ہولڈ", subtitle: "Inspect", tone: "amber", icon: ShieldCheck },
   { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
   { key: "complete", title: "COMPLETE", urdu: "جاب مکمل کریں", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
-  { key: "changeDrum", title: "DRUM", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
+  { key: "changeDrum", title: "DRUM/Spool", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
   { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
   { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
   { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },

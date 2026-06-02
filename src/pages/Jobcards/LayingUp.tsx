@@ -335,6 +335,7 @@ export default function LayingUp({ onLogout }: Props) {
     setLockedDecisionAction(null);
     setProducedLength(0);
     setLengthInput("0");
+    setJobSeconds(0);
 
     pushEvent(
       `Start Job committed: ${inputDrum.length > 0 ? inputDrum.join(", ") : "No input drum"
@@ -432,6 +433,7 @@ export default function LayingUp({ onLogout }: Props) {
   const isStartup = status === "READY";
   const isSetupActive = status === "SETUP";
   const isRunning = status === "RUNNING";
+  const isJobTimerActive = status === "RUNNING" || status === "RUNNING_REWIND" || status === "RUNNING_REWORK";
   const disabledKeys = useMemo<Partial<Record<ActionKey, boolean>>>(() => {
     if (status === "COMPLETED") {
       return {
@@ -658,17 +660,18 @@ export default function LayingUp({ onLogout }: Props) {
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
     if (key === "resume") {
-      if (status === "QC_HOLD" || status === "STOPPED" || status === "FAULT" || status === "MATERIAL_ISSUE") {
+      const canResume =
+        status === "QC_HOLD" ||
+        status === "STOPPED" ||
+        status === "FAULT" ||
+        status === "MATERIAL_ISSUE" ||
+        status === "REWINDING" ||
+        status === "REWORKING" ||
+        status === "DECISION_PENDING";
+
+      if (canResume) {
         setStatus("RUNNING");
-        pushEvent("Resume pressed");
-      }
-      if (status === "REWINDING") {
-        setStatus(nextAfterRewind === "rework" ? "RUNNING_REWORK" : "RUNNING_REWIND");
-        pushEvent("Resume pressed");
-      }
-      if (status === "REWORKING") {
-        setStatus("RUNNING_REWORK");
-        pushEvent("Resume pressed");
+        pushEvent("Resume pressed - job timer continued");
       }
       return;
     }
@@ -693,14 +696,14 @@ export default function LayingUp({ onLogout }: Props) {
   }, [isSetupActive]);
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isJobTimerActive) return;
 
     const timer = window.setInterval(() => {
       setJobSeconds((prev) => prev + 1);
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [isRunning]);
+  }, [isJobTimerActive]);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => setLiveClock(new Date()), 1000);

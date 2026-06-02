@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, LogOut, RefreshCw, X } from "lucide-react";
+import { BookOpenText, LayoutGrid, LogOut, RefreshCw, UserCircle2, X } from "lucide-react";
 import LayingUpActionPanel, { STANDARD_ACTION_CARDS, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
@@ -59,6 +59,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 }
 
 export default function Sheathing({ onBack, data, onLogout }: Props) {
+  const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
   const [workflow, setWorkflow] = useState<ModalMode>(null);
@@ -271,19 +272,58 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
             <div className="flex min-w-0 items-center gap-2">
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
-            <div className="text-center">
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">SHEATHING</div>
-              <div className="text-lg font-black">Sheathing Job Card</div>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
-              <button onClick={() => setShowInstructions((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">Instructions</button>
-              <button onClick={() => pushEvent("Refresh clicked")} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
+
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-[13px] font-black tracking-tight">SHEATHING</div>
+
+            <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-full border border-amber-700 bg-amber-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm"
+              >
+                ⌛ {statusText}
+              </button>
+              <button onClick={() => pushEvent("Refreshed")} className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white">
                 <RefreshCw className="h-4 w-4" />
               </button>
-              <button onClick={onLogout} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
-                <LogOut className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={() => setShowInstructions((v) => !v)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm"
+              >
+                <BookOpenText className="h-4 w-4" />
+                Instructions
               </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((v) => !v)}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white shadow-sm"
+                  aria-label="Profile menu"
+                >
+                  <UserCircle2 className="h-5 w-5 text-slate-700" />
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute right-0 top-10 z-40 w-40 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div className="border-b border-slate-100 px-3 py-2">
+                      <div className="text-[11px] font-black uppercase tracking-wide text-slate-500">Account</div>
+                      <div className="text-[13px] font-black text-slate-950">Operator</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onLogout?.();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>

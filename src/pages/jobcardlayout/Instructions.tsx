@@ -1,190 +1,139 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, PencilLine, Save, Volume2 } from "lucide-react";
-import * as Vosk from "vosk-browser";
 
 type VoiceComponentProps = {
   isUrdu: boolean;
-  modelUrl?: string;
   active?: boolean;
 };
 
-const DEFAULT_MODEL_URL = "/models/vosk-model-small-en-us-0.15.tar.gz";
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0?: { transcript?: string };
+};
 
-const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }: VoiceComponentProps) => {
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionErrorEventLike = {
+  error: string;
+};
+
+type SpeechRecognitionInstance = {
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+};
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+    SpeechRecognition?: new () => SpeechRecognitionInstance;
+  }
+}
+
+const VoiceComponent = ({ isUrdu, active = true }: VoiceComponentProps) => {
   const [voiceText, setVoiceText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
   const [instructions, setInstructions] = useState<string[]>([]);
-  const [modelReady, setModelReady] = useState(false);
-  const [modelMissing, setModelMissing] = useState(false);
 
-  const modelRef = useRef<any>(null);
-  const recognizerRef = useRef<any>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const finalTranscriptRef = useRef("");
 
+  const recognitionCtor = useMemo(() => window.SpeechRecognition || window.webkitSpeechRecognition, []);
+
   useEffect(() => {
-    setIsSupported(Boolean(navigator.mediaDevices?.getUserMedia));
-
-    let cancelled = false;
-
-    const loadModel = async () => {
-      try {
-        setStatusMessage(
-          isUrdu
-            ? "Vosk model لوڈ ہو رہا ہے..."
-            : "Loading offline Vosk model..."
-        );
-
-        const probe = await fetch(modelUrl, { method: "HEAD" });
-        if (!probe.ok) {
-          throw new Error(`Model file not found at ${modelUrl} (${probe.status})`);
-        }
-
-        const model = await Vosk.createModel(modelUrl);
-        if (cancelled) return;
-        modelRef.current = model;
-        setModelReady(true);
-        setModelMissing(false);
-        setStatusMessage(
-          isUrdu
-            ? "Offline speech model ready"
-            : "Offline speech model ready"
-        );
-      } catch (error) {
-        if (cancelled) return;
-        setModelReady(false);
-        setModelMissing(true);
-        setStatusMessage(
-          isUrdu
-            ? `Model load نہیں ہو سکا: ${String(error)}`
-            : `Model could not load: ${String(error)}`
-        );
-      }
-    };
-
-    loadModel();
-
-    return () => {
-      cancelled = true;
-      recognizerRef.current?.free?.();
-      modelRef.current?.terminate?.();
-      processorRef.current?.disconnect?.();
-      sourceRef.current?.disconnect?.();
-      streamRef.current?.getTracks?.().forEach((track) => track.stop());
-      audioContextRef.current?.close?.();
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-    };
-  }, [isUrdu, modelUrl]);
+    setIsSupported(Boolean(recognitionCtor));
+  }, [recognitionCtor]);
 
   useEffect(() => {
     if (!active) {
-      stopListening(false);
+      recognitionRef.current?.stop();
     }
   }, [active]);
 
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
+    };
+  }, []);
+
   const stopListening = (save = true) => {
+    recognitionRef.current?.stop();
     setIsListening(false);
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-
-    try {
-      processorRef.current?.disconnect();
-      sourceRef.current?.disconnect();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      audioContextRef.current?.close();
-    } catch {
-      // ignore cleanup errors
-    }
-
-    processorRef.current = null;
-    sourceRef.current = null;
-    streamRef.current = null;
-    audioContextRef.current = null;
 
     if (save && voiceText.trim()) {
       setInstructions((prev) => [...prev, voiceText.trim()]);
+      setVoiceText("");
+      finalTranscriptRef.current = "";
     }
   };
 
-  const startListening = async () => {
-    if (!isSupported) {
+  const startListening = () => {
+    if (!isSupported || !recognitionCtor) {
       setStatusMessage(
         isUrdu
-          ? "Mic access اس browser میں دستیاب نہیں ہے"
-          : "Microphone access is not available in this browser"
-      );
-      return;
-    }
-
-    if (!modelReady || !modelRef.current) {
-      setStatusMessage(
-        isUrdu
-          ? "Offline model ابھی ready نہیں ہے"
-          : "Offline model is not ready yet"
+          ? "آپ کے browser میں speech recognition support نہیں ہے۔ Chrome یا Edge استعمال کریں۔"
+          : "Speech recognition is not supported in this browser. Try Chrome or Edge."
       );
       return;
     }
 
     try {
+      const recognition = new recognitionCtor();
+      recognition.lang = isUrdu ? "ur-PK" : "en-US";
+      recognition.interimResults = true;
+      recognition.continuous = true;
+
       finalTranscriptRef.current = "";
       setVoiceText("");
       setStatusMessage(isUrdu ? "بولنا شروع کریں..." : "Start speaking...");
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          channelCount: 1,
-          sampleRate: 16000,
-        },
-        video: false,
-      });
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
+        let interimTranscript = "";
+        let finalTranscript = finalTranscriptRef.current;
 
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
-      const recognizer = new modelRef.current.KaldiRecognizer();
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          const result = event.results[i];
+          const transcript = result[0]?.transcript?.trim() || "";
 
-      recognizer.on("result", (message: any) => {
-        const text = message?.result?.text || "";
-        if (text.trim()) {
-          finalTranscriptRef.current = `${finalTranscriptRef.current}${text} `.trim() + " ";
-          setVoiceText(finalTranscriptRef.current.trim());
+          if (result.isFinal) {
+            finalTranscript = `${finalTranscript} ${transcript}`.trim();
+          } else {
+            interimTranscript = `${interimTranscript} ${transcript}`.trim();
+          }
         }
-      });
 
-      recognizer.on("partialresult", (message: any) => {
-        const partial = message?.result?.partial || "";
-        setVoiceText(`${finalTranscriptRef.current}${partial}`.trim());
-      });
-
-      processor.onaudioprocess = (event) => {
-        try {
-          recognizer.acceptWaveform(event.inputBuffer);
-        } catch {
-          setStatusMessage(
-            isUrdu
-              ? "Audio processing میں مسئلہ ہے"
-              : "Audio processing error"
-          );
-        }
+        finalTranscriptRef.current = finalTranscript;
+        setVoiceText([finalTranscript, interimTranscript].filter(Boolean).join(" ").trim());
       };
 
-      source.connect(processor);
-      processor.connect(audioContext.destination);
+      recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
+        setStatusMessage(
+          isUrdu
+            ? `Speech recognition error: ${event.error}`
+            : `Speech recognition error: ${event.error}`
+        );
+        setIsListening(false);
+      };
 
-      streamRef.current = stream;
-      audioContextRef.current = audioContext;
-      sourceRef.current = source;
-      processorRef.current = processor;
-      recognizerRef.current = recognizer;
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
       setIsListening(true);
-      timeoutRef.current = window.setTimeout(() => stopListening(), 15000);
+      recognition.start();
     } catch (error) {
       setStatusMessage(
         isUrdu
@@ -192,7 +141,6 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
           : `Recording could not start: ${String(error)}`
       );
       setIsListening(false);
-      stopListening(false);
     }
   };
 
@@ -225,16 +173,8 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
       {!isSupported && (
         <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-900">
           {isUrdu
-            ? "آپ کے browser میں mic access support نہیں ہے. Chrome/Edge استعمال کریں."
-            : "Your browser does not support microphone access. Try Chrome or Edge."}
-        </div>
-      )}
-
-      {modelMissing && (
-        <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-800">
-          {isUrdu
-            ? "Offline model نہیں ملا. اسے /public/models میں رکھیں."
-            : "Offline model not found. Put it under /public/models."}
+            ? "آپ کے browser میں speech recognition support نہیں ہے۔ Chrome/Edge استعمال کریں۔"
+            : "Your browser does not support speech recognition. Try Chrome or Edge."}
         </div>
       )}
 
@@ -262,8 +202,9 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
 
         <div className="flex gap-2 md:flex-col">
           <button
-            onClick={isListening ? () => stopListening() : startListening}
-            disabled={!isSupported || !modelReady}
+            type="button"
+            onClick={isListening ? () => stopListening(true) : startListening}
+            disabled={!isSupported}
             className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 ${
               isListening ? "bg-red-600" : "bg-slate-900"
             }`}
@@ -273,6 +214,7 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
           </button>
 
           <button
+            type="button"
             onClick={saveTypedInstruction}
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-black text-green-800 shadow-sm"
           >
@@ -283,8 +225,8 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
       </div>
 
       <div className="mt-3 flex items-center justify-between text-[10px] font-semibold text-slate-500">
-        <span>{isUrdu ? "زیادہ سے زیادہ 15 سیکنڈ" : "Max 15 sec"}</span>
-        <span>{isUrdu ? "ریکارڈ شدہ ہدایات نیچے دکھائی جائیں گی" : "Saved instructions appear below"}</span>
+        <span>{isUrdu ? "براہ راست speech-to-text" : "Browser speech-to-text"}</span>
+        <span>{isUrdu ? "محفوظ شدہ ہدایات نیچے دکھائی جائیں گی" : "Saved instructions appear below"}</span>
       </div>
 
       {instructions.length > 0 && (
@@ -295,7 +237,7 @@ const VoiceComponent = ({ isUrdu, modelUrl = DEFAULT_MODEL_URL, active = true }:
           </div>
           <div className="grid gap-2">
             {instructions.map((instruction, index) => (
-              <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700">
+              <div key={`${instruction}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700">
                 {instruction}
               </div>
             ))}

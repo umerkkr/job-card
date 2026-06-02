@@ -740,7 +740,8 @@ export default function LayingUp({ onBack, onLogout }: Props) {
               <button
                 type="button"
                 onClick={() => setShowInstructions((v) => !v)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-[11px] font-black
+                 text-slate-700 shadow-sm"
               >
                 <BookOpenText className="h-4 w-4" />
                 Instructions
@@ -847,7 +848,7 @@ export default function LayingUp({ onBack, onLogout }: Props) {
           <div className="border-t border-slate-200 p-2 pt-1.5">
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
-                ["Input Lot / Drum No", "DR-2025-0556"],
+                ["Input Lot / Drum No", "-"],
                 ["Length (m)", "148"],
                 ["Color", "1"],
                 ["Lay Length (m)", "145"],

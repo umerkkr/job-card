@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, BookOpenText, CheckCircle2, Clock3, LayoutGrid, Plus, RefreshCw, RotateCcw, ShieldCheck, Siren, X } from "lucide-react";
-import LayingUpActionPanel, { type ActionCardData, type ActionKey } from "./LayingUpActionPanel";
+import { LayoutGrid, LogOut, RefreshCw, X } from "lucide-react";
+import LayingUpActionPanel, { STANDARD_ACTION_CARDS, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
 type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "COMPLETED";
@@ -8,21 +8,7 @@ type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "f
 
 const ORDER_LENGTH = 500;
 
-const actionCards: readonly ActionCardData[] = [
-  { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
-  { key: "startJob", title: "START JOB", urdu: "جاب شروع", subtitle: "Begin production", tone: "green2", icon: CheckCircle2 },
-  { key: "stop", title: "STOP", urdu: "رکیں", subtitle: "Reason", tone: "red", icon: Siren },
-  { key: "qcHold", title: "QC HOLD", urdu: "QC ہولڈ", subtitle: "Inspect", tone: "amber", icon: ShieldCheck },
-  { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
-  { key: "complete", title: "COMPLETE", urdu: "مکمل", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
-  { key: "changeDrum", title: "DRUM", urdu: "ڈرم", subtitle: "Change", tone: "slate", icon: RefreshCw },
-  { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
-  { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
-  { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },
-  { key: "breakdown", title: "FAULT", urdu: "خرابی", subtitle: "Breakdown", tone: "red2", icon: Siren },
-  { key: "materialIssue", title: "MATERIAL", urdu: "میٹریل", subtitle: "Issue", tone: "amber2", icon: Bell },
-  { key: "decisionPending", title: "DECISION", urdu: "فیصلہ", subtitle: "Supervisor", tone: "brown", icon: Clock3 },
-] as const;
+const actionCards = STANDARD_ACTION_CARDS;
 
 function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
@@ -56,8 +42,8 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function WireDrawing({ onBack, data }: Props) {
-  const [isUrdu, setIsUrdu] = useState(true);
+export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
+  const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
   const [workflow, setWorkflow] = useState<ModalMode>(null);
   const [lengthInput, setLengthInput] = useState("");
@@ -67,11 +53,10 @@ export default function WireDrawing({ onBack, data }: Props) {
   const [outputDrum, setOutputDrum] = useState("");
   const [inputDrumValue, setInputDrumValue] = useState("");
   const [outputDrumValue, setOutputDrumValue] = useState("");
-  const [liveClock, setLiveClock] = useState(() => new Date());
   const [events, setEvents] = useState<string[]>([]);
   const [setupSeconds, setSetupSeconds] = useState(0);
+  const [jobSeconds, setJobSeconds] = useState(0);
   const [producedLength, setProducedLength] = useState(0);
-  const [embossingActive, setEmbossingActive] = useState(true);
   const [decisionChoice, setDecisionChoice] = useState<"rewind" | "rework" | "holdJob" | "deviation" | null>(null);
   const [nextAfterRewind, setNextAfterRewind] = useState<"continue" | "rework">("continue");
   const [toolingReason, setToolingReason] = useState("Die Linking Size");
@@ -107,23 +92,22 @@ export default function WireDrawing({ onBack, data }: Props) {
     }
   }, [status]);
   const setupTimeLabel = `${String(Math.floor(setupSeconds / 60)).padStart(2, "0")}:${String(setupSeconds % 60).padStart(2, "0")}`;
-  const liveClockLabel = liveClock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
   const pushEvent = (msg: string) => setEvents((prev) => [`${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} ${msg}`, ...prev]);
 
   useEffect(() => {
-    const clockTimer = window.setInterval(() => setLiveClock(new Date()), 1000);
-    const embossTimer = window.setInterval(() => setEmbossingActive((prev) => !prev), 6000);
-    return () => {
-      window.clearInterval(clockTimer);
-      window.clearInterval(embossTimer);
-    };
+    return undefined;
   }, []);
 
   useEffect(() => {
     if (status !== "SETUP") return;
     const setupTimer = window.setInterval(() => setSetupSeconds((prev) => prev + 1), 1000);
     return () => window.clearInterval(setupTimer);
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "RUNNING") return;
+    const jobTimer = window.setInterval(() => setJobSeconds((prev) => prev + 1), 1000);
+    return () => window.clearInterval(jobTimer);
   }, [status]);
 
   const openWorkflow = (mode: ModalMode) => {
@@ -148,6 +132,7 @@ export default function WireDrawing({ onBack, data }: Props) {
     setStatus("RUNNING");
     setProducedLength(0);
     setLengthInput("0");
+    setJobSeconds(0);
     pushEvent(`Start Job committed: ${nextInputDrum || "-"} -> ${nextOutputDrum || "-"}`);
     pushEvent("Meter reading recorded at 0 m");
     pushEvent(`Setup completed in ${setupTimeLabel}`);
@@ -276,14 +261,25 @@ export default function WireDrawing({ onBack, data }: Props) {
   return (
     <div className="min-h-screen bg-[#f4f6f8] p-2 text-slate-950" style={{ fontFamily: "Ubuntu, sans-serif" }}>
       <div className="mx-auto flex max-w-[1400px] flex-col gap-2">
-        <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
+        <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
+            </div>
             <div className="text-center">
               <div className="text-[11px] font-black uppercase tracking-[0.18em] text-green-700">WIRE DRAWING</div>
               <div className="text-lg font-black">Wire Drawing Job Card</div>
             </div>
-            <button onClick={() => setIsUrdu((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{isUrdu ? "English / اردو" : "اردو / English"}</button>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">{"<-"} Back</button>
+              <button onClick={() => setShowInstructions((prev) => !prev)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black">Instructions</button>
+              <button onClick={() => pushEvent("Refresh clicked")} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              <button onClick={onLogout} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -310,6 +306,26 @@ export default function WireDrawing({ onBack, data }: Props) {
                 <div className="mt-2 h-3 rounded-full border border-white/30 bg-white/25 p-0.5">
                   <div className="h-full rounded-full bg-lime-400" style={{ width: `${progress}%` }} />
                 </div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-left">
+                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
+                      <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
+                      <span className="text-[13px] font-black">3085</span>
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
+                      <span className="text-[13px] font-black">50 mm²</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -331,14 +347,14 @@ export default function WireDrawing({ onBack, data }: Props) {
           <div className="border-t border-slate-200 p-2 pt-1.5">
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
-                ["Input Lot / Drum No", "-"],
-                ["Length (m)", "-"],
-                ["Color", "-"],
-                ["Material", "-"],
-                ["Thickness", "-"],
-                ["OD", "-"],
-                ["Spark test", "-"],
-                ["Line speed", "-"],
+                ["Spool No", inputDrumValue || "-"],
+                ["Output Spool", outputDrumValue || "-"],
+                ["Length (m)", producedLength ? producedLength.toFixed(1) : "-"],
+                ["Material", data?.process || "Wire Drawing"],
+                ["Machine", data?.machine || "M-85"],
+                ["Crew", crewNo || "N/A"],
+                ["Shift", "Shift A"],
+                ["QC", status === "RUNNING" ? "OK" : "PENDING"],
               ].map(([label, value]) => <InfoBox key={label} label={label} value={value} />)}
             </div>
           </div>
@@ -348,16 +364,28 @@ export default function WireDrawing({ onBack, data }: Props) {
           <LayingUpActionPanel cards={actionCards} onAction={handleAction} disabledKeys={disabledKeys} />
         </section>
 
-        <section className="grid gap-2 lg:grid-cols-[1fr_1fr_1.15fr]">
-          <div className={`rounded-2xl border p-2.5 ${embossingActive ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate text-[12px] font-black text-amber-900">CHECK EMBOSSING WHEEL & ALIGNMENT</div>
-                <div className="text-[10px] font-semibold text-amber-700">Auto turn-off in</div>
+        {showInstructions && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-[14px] font-black">Instructions / ہدایات</div>
+                <div className="text-[10px] text-slate-500">Record or type the instruction notes for this job card.</div>
               </div>
-              <div className={`text-[14px] font-black ${embossingActive ? "text-emerald-700" : "text-amber-700"}`}>{embossingActive ? "ON" : "OFF"}</div>
+              <button
+                type="button"
+                onClick={() => setShowInstructions(false)}
+                className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">
+              No instructions configured yet for Wire Drawing.
+            </div>
+          </section>
+        )}
+
+        <section className="grid gap-2 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <div>
@@ -399,7 +427,7 @@ export default function WireDrawing({ onBack, data }: Props) {
             <div>MACHINE STATUS: <span className="font-black text-amber-700">{statusText}</span></div>
             <div className="text-center">SETUP TIME: <b>{setupTimeLabel}</b></div>
             <div className="flex items-center justify-end gap-2">
-              <span>LIVE CLOCK: <b>{liveClockLabel}</b></span>
+              <span>JOB TIMER: <b>{String(Math.floor(jobSeconds / 60)).padStart(2, "0")}:{String(jobSeconds % 60).padStart(2, "0")}</b></span>
               <button onClick={() => pushEvent("Refresh clicked")} className="grid h-7 w-7 place-items-center rounded-full border border-slate-200"><RefreshCw className="h-3.5 w-3.5" /></button>
             </div>
           </div>

@@ -220,6 +220,7 @@ export default function LayingUp({ onLogout }: Props) {
   const [inputDrumValue, setInputDrumValue] = useState<string[]>([]);
   const [outputDrumValue, setOutputDrumValue] = useState<string[]>([]);
   const [liveClock, setLiveClock] = useState(() => new Date());
+  const [jobSeconds, setJobSeconds] = useState(0);
 
   const statusText = useMemo(() => {
     switch (status) {
@@ -639,6 +640,7 @@ export default function LayingUp({ onLogout }: Props) {
       setLockedDecisionAction(null);
       setSetupSeconds(0);
       setProducedLength(0);
+      setJobSeconds(0);
       pushEvent(`Setup Time Started at ${settingTime}`);
       return;
     }
@@ -689,6 +691,16 @@ export default function LayingUp({ onLogout }: Props) {
 
     return () => window.clearInterval(timer);
   }, [isSetupActive]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const timer = window.setInterval(() => {
+      setJobSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isRunning]);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => setLiveClock(new Date()), 1000);
@@ -937,7 +949,7 @@ export default function LayingUp({ onLogout }: Props) {
             </div>
             <div className="flex items-center justify-end gap-2">
               <span>
-                LIVE CLOCK: <b>{liveClockLabel}</b>
+                JOB TIMER: <b>{String(Math.floor(jobSeconds / 60)).padStart(2, "0")}:{String(jobSeconds % 60).padStart(2, "0")}</b>
               </span>
               <button onClick={() => pushEvent("Refresh clicked")} className="grid h-7 w-7 place-items-center rounded-full border border-slate-200">
                 <RefreshCw className="h-3.5 w-3.5" />

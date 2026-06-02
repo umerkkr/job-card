@@ -1,4 +1,15 @@
-import { Clock3 } from "lucide-react";
+import {
+  Bell,
+  BookOpenText,
+  CheckCircle2,
+  Clock3,
+  LayoutGrid,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  ShieldCheck,
+  Siren,
+} from "lucide-react";
 
 export type ActionKey =
   | "start"
@@ -23,6 +34,22 @@ export type ActionCardData = {
   tone: string;
   icon: React.ComponentType<{ className?: string }>;
 };
+
+export const STANDARD_ACTION_CARDS: readonly ActionCardData[] = [
+  { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
+  { key: "startJob", title: "START JOB", urdu: "جاب شروع", subtitle: "Begin production", tone: "green2", icon: CheckCircle2 },
+  { key: "stop", title: "STOP", urdu: "روکیں", subtitle: "Reason", tone: "red", icon: Siren },
+  { key: "qcHold", title: "QC HOLD", urdu: "QC ہولڈ", subtitle: "Inspect", tone: "amber", icon: ShieldCheck },
+  { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
+  { key: "complete", title: "COMPLETE", urdu: "جاب مکمل کریں", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
+  { key: "changeDrum", title: "DRUM", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
+  { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
+  { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
+  { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },
+  { key: "breakdown", title: "FAULT", urdu: "خرابی", subtitle: "Breakdown", tone: "red2", icon: Siren },
+  { key: "materialIssue", title: "MATERIAL", urdu: "میٹریل", subtitle: "Issue", tone: "amber2", icon: Bell },
+  { key: "decisionPending", title: "DECISION", urdu: "فیصلہ", subtitle: "Supervisor", tone: "brown", icon: Clock3 },
+] as const;
 
 type Props = {
   cards: readonly ActionCardData[];

@@ -4,6 +4,7 @@ import DigitalJobCard from "./DigitalJobCard";
 
 import WireDrawing from "../Jobcards/Drawing";
 import LayingUp from "../Jobcards/LayingUp";
+import Insulation from "../Jobcards/Insulation";
 import Sheathing from "../Jobcards/Sheathing";
 
 type JobData = {
@@ -35,6 +36,9 @@ const JobCardController = ({ user, onLogout }: Props) => {
   case "drawing":
     return <WireDrawing onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
+  // case "wire-drawing":
+  //   return <WireDrawing onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+
   // case "stranding":
   //   return <Stranding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
@@ -49,6 +53,9 @@ const JobCardController = ({ user, onLogout }: Props) => {
 
   case "sheathing":
     return <Sheathing onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
+
+  case "insulation":
+    return <Insulation onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;
 
   // case "sheathing":
   //   return <Bradding onBack={handleBack} data={jobData} crewNo={user.crewNo} onLogout={onLogout} />;

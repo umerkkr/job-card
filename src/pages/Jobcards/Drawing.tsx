@@ -337,58 +337,77 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
         </header>
 
         <section className="grid gap-2 xl:grid-cols-[1.55fr_1fr]">
-          <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
-            <div className="grid grid-cols-[1fr_210px] gap-3">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
-                <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "WIRE DRAWING"}</div>
-                <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
-                  <div className="truncate">Job: {data?.jobId || "DRA-001"}</div>
-                  <div className="truncate">Batch: {data?.process || "Wire Drawing"}</div>
-                  <div className="truncate">WO: {data?.machine || "M-85"}</div>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-end justify-start gap-2">
-                  <div>
-                    <div className="text-[10px] font-bold text-white/75">Progress</div>
-                    <div className="text-[32px] font-black leading-none">{progress}%</div>
-                  </div>
-                  <div className="pb-1 text-[12px] font-black">{producedLength.toFixed(1)} m / {ORDER_LENGTH} m</div>
-                </div>
-                <div className="mt-2 h-3 rounded-full border border-white/30 bg-white/25 p-0.5">
-                  <div className="h-full rounded-full bg-lime-400" style={{ width: `${progress}%` }} />
-                </div>
-                <div className="mt-2 grid grid-cols-3 gap-2 text-left">
-                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
-                      <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
-                      <span className="text-[13px] font-black">3085</span>
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-white/10 px-2 py-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
-                      <span className="text-[13px] font-black">50 mm²</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
+    <div className="grid grid-cols-[1fr_210px] gap-3">
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
+        <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "WIRE DRAWING"}</div>
+        <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
+          <div className="truncate">Job: {data?.jobId || "DRA-001"}</div>
+          <div className="truncate">Batch: {data?.process || "Wire Drawing"}</div>
+          <div className="truncate">WO: {data?.machine || "M-85"}</div>
+        </div>
+      </div>
+
+      <div className="text-left">
+        <div className="flex items-end justify-start gap-2">
+          <div>
+            <div className="text-[10px] font-bold text-white/75">Progress</div>
+            <div className="text-[32px] font-black leading-none">{progress}%</div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Machine</div><div className="text-[12px] font-black">M-85</div><div className="text-[10px] text-slate-500">Drawing</div></div>
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Operator</div><div className="text-[12px] font-black">Ali Raza</div><div className="text-[10px] text-slate-500">Supervisor: Ahmed Khan</div></div>
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">Shift</div><div className="text-[12px] font-black">Shift A</div><div className="text-[10px] text-slate-500">18:11</div></div>
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm"><div className="text-[9px] font-black uppercase text-slate-500">QC</div><div className="text-[12px] font-black">OK</div><div className="text-[10px] text-slate-500">Approved</div></div>
-          </div>
-        </section>
+          <div className="pb-1 text-[12px] font-black">{producedLength.toFixed(1)} m / {ORDER_LENGTH} m</div>
+        </div>
+        <div className="mt-2 h-3 rounded-full border border-white/30 bg-white/25 p-0.5">
+          <div className="h-full rounded-full bg-lime-400" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+    </div>
+
+    <div className="mt-2 grid grid-cols-3 gap-2 text-left">
+      <div className="rounded-xl bg-white/10 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
+          <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
+        </div>
+      </div>
+      <div className="rounded-xl bg-white/10 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
+          <span className="text-[13px] font-black">3085</span>
+        </div>
+      </div>
+      <div className="rounded-xl bg-white/10 px-2 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
+          <span className="text-[13px] font-black">50 mm²</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="grid grid-cols-4 gap-2">
+    <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Machine</div>
+      <div className="truncate text-[12px] font-black leading-tight">M-85</div>
+      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Drawing</div>
+    </div>
+    <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Operator</div>
+      <div className="truncate text-[12px] font-black leading-tight">Ali Raza</div>
+      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Supervisor: Ahmed Khan</div>
+    </div>
+    <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Shift</div>
+      <div className="truncate text-[12px] font-black leading-tight">Shift A</div>
+      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">18:11</div>
+    </div>
+    <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">QC</div>
+      <div className="truncate text-[12px] font-black leading-tight">OK</div>
+      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Approved</div>
+    </div>
+  </div>
+</section>
 
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <button type="button" className="flex w-full items-center justify-between rounded-2xl px-3 py-2">

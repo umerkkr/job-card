@@ -3,10 +3,12 @@ import { BookOpenText, LayoutGrid, LogOut, RefreshCw, UserCircle2, X } from "luc
 import LayingUpActionPanel, { STANDARD_ACTION_CARDS, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
-type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "COMPLETED";
+type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "TOOLING" | "COMPLETED";
 type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "fault" | "materialIssue" | "decision" | "rewind" | "rework" | "tooling" | null;
 
 const ORDER_LENGTH = 500;
+const INPUT_SPOOL_LOV = ["C-49131"];
+const OUTPUT_SPOOL_LOV = ["SFM00000544-X  -00145/2526"];
 
 const actionCards = STANDARD_ACTION_CARDS;
 
@@ -86,6 +88,8 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
       case "RUNNING_REWIND":
       case "RUNNING_REWORK":
         return "RUNNING";
+      case "TOOLING":
+        return "TOOLING";
       case "COMPLETED":
         return "COMPLETED";
       default:
@@ -113,6 +117,9 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
 
   const openWorkflow = (mode: ModalMode) => {
     setWorkflow(mode);
+    if (mode === "tooling") {
+      setStatus("TOOLING");
+    }
     setReason(mode === "fault" ? "Electrical fault" : mode === "stop" ? "Management decision" : "QC Review");
     setRemarks("");
     setLengthInput(mode === "startJob" ? "0" : "");
@@ -149,7 +156,7 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
       const nextOutputDrum = outputDrum.trim();
       if (nextInputDrum) setInputDrumValue(nextInputDrum);
       if (nextOutputDrum) setOutputDrumValue(nextOutputDrum);
-      pushEvent(`Drum changed: ${nextInputDrum || inputDrumValue || "-"} -> ${nextOutputDrum || outputDrumValue || "-"} | ${lengthInput || producedLength} m`);
+      pushEvent(`Spool changed: ${nextInputDrum || inputDrumValue || "-"} -> ${nextOutputDrum || outputDrumValue || "-"} | ${lengthInput || producedLength} m`);
       setStatus("RUNNING");
     } else if (workflow === "qcHold") {
       setStatus("QC_HOLD");
@@ -229,7 +236,7 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
     if (status === "DECISION_PENDING") {
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
     }
-    if (status === "REWINDING" || status === "REWORKING") {
+    if (status === "REWINDING" || status === "REWORKING" || status === "TOOLING") {
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     }
     if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") {
@@ -248,7 +255,7 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
           : workflow === "qcHold"
             ? "QC Hold / QC ہولڈ"
             : workflow === "changeDrum"
-              ? "Change Drum / ڈرم تبدیل"
+              ? "Change Spool / سپول تبدیل"
               : workflow === "tooling"
                 ? "Tooling / ٹولنگ"
                 : workflow === "decision"
@@ -280,7 +287,6 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
             <div className="flex items-center justify-end gap-1.5">
               <button
                 type="button"
-                onClick={onBack}
                 className="rounded-full border border-amber-700 bg-amber-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm"
               >
                 ⌛ {statusText}
@@ -436,8 +442,8 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
           <div className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <div>
-                <div className="text-[13px] font-black">Drum Traceability</div>
-                <div className="text-[10px] text-slate-500">Input and output drums</div>
+                <div className="text-[13px] font-black">Spool Traceability</div>
+                <div className="text-[10px] text-slate-500">Input and output spools</div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -485,7 +491,12 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
         <Modal
           title={modalTitle}
           sub={workflow === "startJob" ? "Enter input/output spool and confirm the zero meter reading." : "Fill the fields and commit the action."}
-          onClose={() => setWorkflow(null)}
+          onClose={() => {
+            if (workflow === "tooling" && status === "TOOLING") {
+              setStatus("RUNNING");
+            }
+            setWorkflow(null);
+          }}
         >
           <div className="grid gap-4">
             {(workflow === "startJob" || workflow === "changeDrum" || workflow === "tooling" || workflow === "rewind" || workflow === "rework" || workflow === "complete" || workflow === "qcHold" || workflow === "fault" || workflow === "materialIssue" || workflow === "stop") && (
@@ -498,21 +509,29 @@ export default function WireDrawing({ onBack, data, crewNo, onLogout }: Props) {
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
                   <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Input Spool / ان پٹ سپول</div>
-                  <input
+                  <select
                     value={inputDrum}
                     onChange={(e) => setInputDrum(e.target.value)}
                     className={fieldClassName()}
-                    placeholder="Enter input spool"
-                  />
+                  >
+                    <option value="">Select input spool</option>
+                    {INPUT_SPOOL_LOV.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </label>
                 <label className="block">
                   <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Output Spool / آؤٹ پٹ سپول</div>
-                  <input
+                  <select
                     value={outputDrum}
                     onChange={(e) => setOutputDrum(e.target.value)}
                     className={fieldClassName()}
-                    placeholder="Enter output spool"
-                  />
+                  >
+                    <option value="">Select output spool</option>
+                    {OUTPUT_SPOOL_LOV.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
                 </label>
               </div>
             )}

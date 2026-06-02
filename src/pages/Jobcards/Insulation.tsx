@@ -45,7 +45,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function Insulation({ data, onLogout }: Props) {
+export default function Insulation({ onBack, data, onLogout }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
@@ -288,12 +288,26 @@ export default function Insulation({ data, onLogout }: Props) {
         <header className="sticky top-1 z-30 rounded-2xl border border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+              >
+                {"<-"} Back
+              </button>
               <div className="truncate text-[15px] font-black tracking-tight">PAKISTAN CABLES LIMITED</div>
             </div>
 
             <div className="rounded-full bg-slate-100 px-3 py-1 text-[13px] font-black tracking-tight">{PROCESS_KEY}</div>
 
             <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-black text-slate-700 shadow-sm"
+              >
+                {"<-"} Back
+              </button>
               <button className="rounded-full border border-amber-700 bg-amber-700 px-3 py-1.5 text-[11px] font-black text-white shadow-sm">
                 ⌛ {statusText}
               </button>

@@ -10,7 +10,6 @@ const LoginPage = ({ users, onLogin }: Props) => {
   const [username, setUsername] = useState(users[0]?.username ?? "");
   const [password, setPassword] = useState("1234");
   const [error, setError] = useState("");
-
   const submit = (event: FormEvent) => {
     event.preventDefault();
 

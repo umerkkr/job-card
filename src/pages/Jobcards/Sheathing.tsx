@@ -3,7 +3,7 @@ import { BookOpenText, LayoutGrid, LogOut, RefreshCw, UserCircle2, X } from "luc
 import LayingUpActionPanel, { STANDARD_ACTION_CARDS, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack: () => void; data?: any; crewNo?: string; onLogout?: () => void };
-type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "COMPLETED";
+type Status = "READY" | "SETUP" | "RUNNING" | "QC_HOLD" | "STOPPED" | "FAULT" | "MATERIAL_ISSUE" | "DECISION_PENDING" | "REWINDING" | "REWORKING" | "RUNNING_REWIND" | "RUNNING_REWORK" | "TOOLING" | "COMPLETED";
 type ModalMode = "startJob" | "stop" | "qcHold" | "complete" | "changeDrum" | "fault" | "materialIssue" | "decision" | "rewind" | "rework" | "tooling" | null;
 
 const ORDER_LENGTH = 750;
@@ -22,6 +22,14 @@ const OUTPUT_DRUM_LOV = [
   "",
   "",
   "",
+];
+
+const STOP_REASON_OPTIONS = [
+  "Management decision",
+  "Setup issue",
+  "Machine cleaning",
+  "Lead drum loading",
+  "Lead drum setting",
 ];
 
 const actionCards = STANDARD_ACTION_CARDS;
@@ -147,6 +155,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
   const [decisionChoice, setDecisionChoice] = useState<"rewind" | "rework" | "holdJob" | "deviation" | null>(null);
   const [nextAfterRewind, setNextAfterRewind] = useState<"continue" | "rework">("continue");
   const [toolingReason, setToolingReason] = useState("Die Linking Size");
+  const [stopReason, setStopReason] = useState(STOP_REASON_OPTIONS[0]);
 
   const selectedInputDrum = inputDrum || INPUT_DRUM_LOV[0];
   const selectedOutputDrum = outputDrum || OUTPUT_DRUM_LOV[0];
@@ -213,6 +222,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
     setDecisionChoice(null);
     setNextAfterRewind("continue");
     setToolingReason("Die Linking Size");
+    if (mode === "stop") setStopReason(STOP_REASON_OPTIONS[0]);
     if (mode === "startJob" || mode === "changeDrum") {
       setInputDrum(inputDrumValue);
       setOutputDrum(outputDrumValue);
@@ -250,7 +260,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
       pushEvent(`QC Hold committed at ${lengthInput || producedLength} m: ${reason}${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "stop") {
       setStatus("STOPPED");
-      pushEvent(`Stop job committed: ${reason}${remarks ? ` | ${remarks}` : ""}`);
+      pushEvent(`Stop job committed: ${stopReason}${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "fault") {
       setStatus("FAULT");
       pushEvent(`Fault logged at ${lengthInput || producedLength} m: ${reason}${remarks ? ` | ${remarks}` : ""}`);
@@ -267,7 +277,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
       setStatus("REWORKING");
       pushEvent(`Rework committed at ${lengthInput || producedLength} m${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "tooling") {
-      setStatus("RUNNING");
+      setStatus("TOOLING");
       pushEvent(`Tooling committed at ${lengthInput || producedLength} m: ${toolingReason}${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "complete") {
       setStatus("COMPLETED");
@@ -289,6 +299,11 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
     if (key === "resume") {
+      if (status === "TOOLING") {
+        setStatus("RUNNING");
+        pushEvent("Tooling resumed");
+        return;
+      }
       setStatus("RUNNING");
       pushEvent("Resume pressed");
       return;
@@ -308,9 +323,11 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
     if (status === "READY") return { startJob: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     if (status === "SETUP") return { start: true, stop: true, qcHold: true, resume: true, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     if (status === "QC_HOLD") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
-    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "STOPPED") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: false };
+    if (status === "FAULT" || status === "MATERIAL_ISSUE") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     if (status === "DECISION_PENDING") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
     if (status === "REWINDING" || status === "REWORKING") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    if (status === "TOOLING") return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") return { start: true, startJob: true, stop: false, qcHold: false, resume: true, complete: false, changeDrum: false, tooling: false, rewind: true, rework: true, breakdown: false, materialIssue: false, decisionPending: false };
     return { start: true, startJob: true };
   }, [status, decisionChoice]);
@@ -415,7 +432,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
         <div className="mt-0.5 text-[15px] font-black leading-tight">{jobCard.description}</div>
         <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
           <div className="truncate">WO: {jobCard.workOrderNo}</div>
-          <div className="truncate">Operation: {jobCard.operation}</div>
+          {/* <div className="truncate">Operation: {jobCard.operation}</div> */}
         </div>
       </div>
 
@@ -602,6 +619,18 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
                   </select>
                 </label>
               </div>
+            )}
+            {workflow === "stop" && (
+              <label className="block">
+                <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Stop Reason / وجہ</div>
+                <select value={stopReason} onChange={(e) => setStopReason(e.target.value)} className={fieldClassName()}>
+                  {STOP_REASON_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
             {workflow === "tooling" && (
               <label className="block">

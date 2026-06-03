@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import VoiceComponent from "../jobcardlayout/Instructions";
+import { STANDARD_ACTION_CARDS } from "./LayingUpActionPanel";
 import LayingUpActionPanel, { type ActionCardData, type ActionKey } from "./LayingUpActionPanel";
 
 type Props = { onBack?: () => void; data?: any; crewNo?: string; onLogout?: () => void };
@@ -68,6 +69,14 @@ const actionCards: readonly ActionCardData[] = [
   { key: "materialIssue", title: "MATERIAL", urdu: "میٹریل", subtitle: "Issue", tone: "amber2", icon: Bell },
   { key: "decisionPending", title: "DECISION", urdu: "فیصلہ", subtitle: "Supervisor", tone: "brown", icon: Clock3 },
 ] as const;
+
+const STOP_REASON_OPTIONS = {
+  default: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  layingup: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  armouring: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  stranding: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting", "Loading", "Unloading"],
+  drawing: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting", "Loading", "Unloading"],
+} as const;
 
 function TopInfoCard({
   label,
@@ -128,6 +137,15 @@ function Modal({
 
 function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
+}
+
+function getStopReasonOptions(processName?: string) {
+  const key = (processName || "").toLowerCase();
+  if (key.includes("stranding")) return STOP_REASON_OPTIONS.stranding;
+  if (key.includes("drawing")) return STOP_REASON_OPTIONS.drawing;
+  if (key.includes("armouring")) return STOP_REASON_OPTIONS.armouring;
+  if (key.includes("laying")) return STOP_REASON_OPTIONS.layingup;
+  return STOP_REASON_OPTIONS.default;
 }
 
 function safeText(value: unknown, fallback = "-") {
@@ -295,6 +313,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
   const [events, setEvents] = useState<string[]>([]);
   const [inputDrumValue, setInputDrumValue] = useState<string[]>([]);
   const [outputDrumValue, setOutputDrumValue] = useState<string[]>([]);
+  const stopReasonOptions = useMemo(() => getStopReasonOptions(data?.processName ?? data?.process ?? data?.jobId), [data?.processName, data?.process, data?.jobId]);
   const [liveClock, setLiveClock] = useState(() => new Date());
   const [jobSeconds, setJobSeconds] = useState(0);
 
@@ -382,7 +401,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
     }
     if (mode === "stop") {
       setReason("Management decision");
-      setStopReason("Management decision");
+      setStopReason(stopReasonOptions[0] ?? "Management decision");
     }
     if (mode === "startJob") {
       setLengthInput("0");
@@ -473,7 +492,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
 
     if (workflow === "tooling") {
       if (!Number.isNaN(numericLength) && lengthInput.trim()) setProducedLength(Math.max(0, numericLength));
-      setStatus("RUNNING");
+      setStatus("TOOLING");
       pushEvent(`Tooling committed at ${lengthInput || producedLength} m: ${toolingReason}${remarks ? ` | ${remarks}` : ""}`);
     }
 
@@ -587,8 +606,26 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
       };
     }
 
-    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") {
-      const allowDecision = status !== "STOPPED" || ["Management decision", "Setup issue"].includes(stopReason);
+    if (status === "STOPPED") {
+      return {
+        start: true,
+        startJob: true,
+        stop: true,
+        qcHold: true,
+        resume: false,
+        complete: true,
+        changeDrum: true,
+        tooling: true,
+        rewind: true,
+        rework: true,
+        breakdown: true,
+        materialIssue: true,
+        decisionPending: false,
+      };
+    }
+
+    if (status === "FAULT" || status === "MATERIAL_ISSUE") {
+      const allowDecision = ["Management decision", "Setup issue"].includes(stopReason);
       return {
         start: true,
         startJob: true,
@@ -714,6 +751,24 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
       };
     }
 
+    if (status === "TOOLING") {
+      return {
+        start: true,
+        startJob: true,
+        stop: true,
+        qcHold: true,
+        resume: false,
+        complete: true,
+        changeDrum: true,
+        tooling: true,
+        rewind: true,
+        rework: true,
+        breakdown: true,
+        materialIssue: true,
+        decisionPending: true,
+      };
+    }
+
     return { start: true, startJob: true };
   }, [status, stopReason, lockedDecisionAction, nextAfterRewind, isStartup, isSetupActive, isRunning]);
 
@@ -742,6 +797,11 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
     if (key === "resume") {
+      if (status === "TOOLING") {
+        setStatus("RUNNING");
+        pushEvent("Tooling resumed");
+        return;
+      }
       const canResume =
         status === "QC_HOLD" ||
         status === "STOPPED" ||
@@ -870,7 +930,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
                 <div className="mt-0.5 text-[15px] font-black leading-tight">{jobCard.description}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
                   <div className="truncate">WO: {jobCard.workOrderNo}</div>
-                  <div className="truncate">Operation: {jobCard.operation}</div>
+                  {/* <div className="truncate">Operation: {jobCard.operation}</div> */}
                 </div>
               </div>
 
@@ -950,7 +1010,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
           <LayingUpActionPanel
-            cards={actionCards}
+            cards={STANDARD_ACTION_CARDS}
             onAction={handleAction}
             disabledKeys={disabledKeys}
           />
@@ -1152,10 +1212,11 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
                   )}
                   {workflow === "stop" && (
                     <>
-                      <option value="Management decision">Management decision</option>
-                      <option value="Setup issue">Prayer Time</option>
-                      <option value="Setup issue">Meal Time</option>
-                      <option value="Setup issue">Purging /Color Change</option>
+                      {stopReasonOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
                     </>
                   )}
                 </select>

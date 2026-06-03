@@ -40,6 +40,14 @@ type ModalMode =
   | "tooling"
   | null;
 
+const STOP_REASON_OPTIONS = {
+  default: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  layingup: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  armouring: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting"],
+  stranding: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting", "Loading", "Unloading"],
+  drawing: ["Management decision", "Setup issue", "Machine cleaning", "Lead drum loading", "Lead drum setting", "Loading", "Unloading"],
+} as const;
+
 type WireDrawingProduct = {
   id?: number;
   jobWorkBenchJobId?: number;
@@ -125,6 +133,15 @@ const dummyWireDrawingProductInfo = {
 
 function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
+}
+
+function getStopReasonOptions(processName?: string) {
+  const key = (processName || "").toLowerCase();
+  if (key.includes("stranding")) return STOP_REASON_OPTIONS.stranding;
+  if (key.includes("drawing")) return STOP_REASON_OPTIONS.drawing;
+  if (key.includes("armouring")) return STOP_REASON_OPTIONS.armouring;
+  if (key.includes("laying")) return STOP_REASON_OPTIONS.layingup;
+  return STOP_REASON_OPTIONS.default;
 }
 
 function safeText(value: unknown, fallback = "-") {
@@ -286,6 +303,7 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
   const [decisionChoice, setDecisionChoice] = useState<"rewind" | "rework" | "holdJob" | "deviation" | null>(null);
   const [nextAfterRewind, setNextAfterRewind] = useState<"continue" | "rework">("continue");
   const [toolingReason, setToolingReason] = useState("Die Linking Size");
+  const stopReasonOptions = useMemo(() => getStopReasonOptions(data?.processName ?? data?.process ?? data?.jobId), [data?.processName, data?.process, data?.jobId]);
 
   const jobCard = useMemo(() => mapWireDrawingJob(data), [data]);
   console.log(jobCard, "jobcard")
@@ -347,6 +365,7 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
       setStatus("TOOLING");
     }
     setReason(mode === "fault" ? "Electrical fault" : mode === "stop" ? "Management decision" : "QC Review");
+    if (mode === "stop") setReason(stopReasonOptions[0] ?? "Management decision");
     setRemarks("");
     setLengthInput(mode === "startJob" ? "0" : "");
     setDecisionChoice(null);
@@ -406,7 +425,7 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
       setStatus("REWORKING");
       pushEvent(`Rework committed at ${lengthInput || displayProducedLength} m${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "tooling") {
-      setStatus("RUNNING");
+      setStatus("TOOLING");
       pushEvent(`Tooling committed at ${lengthInput || displayProducedLength} m: ${toolingReason}${remarks ? ` | ${remarks}` : ""}`);
     } else if (workflow === "complete") {
       setStatus("COMPLETED");
@@ -428,6 +447,11 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
     if (key === "stop") return openWorkflow("stop");
     if (key === "qcHold") return openWorkflow("qcHold");
     if (key === "resume") {
+      if (status === "TOOLING") {
+        setStatus("RUNNING");
+        pushEvent("Tooling resumed");
+        return;
+      }
       setStatus("RUNNING");
       pushEvent("Resume pressed");
       return;
@@ -455,14 +479,20 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
     if (status === "QC_HOLD") {
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     }
-    if (status === "FAULT" || status === "MATERIAL_ISSUE" || status === "STOPPED") {
-      const allowDecision = status !== "STOPPED" || ["Management decision", "Setup issue"].includes(reason);
+    if (status === "STOPPED") {
+      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: false };
+    }
+    if (status === "FAULT" || status === "MATERIAL_ISSUE") {
+      const allowDecision = ["Management decision", "Setup issue"].includes(reason);
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: false, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: !allowDecision };
     }
     if (status === "DECISION_PENDING") {
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: decisionChoice !== "rewind", rework: decisionChoice !== "rework", breakdown: true, materialIssue: true, decisionPending: false };
     }
-    if (status === "REWINDING" || status === "REWORKING" || status === "TOOLING") {
+    if (status === "REWINDING" || status === "REWORKING") {
+      return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
+    }
+    if (status === "TOOLING") {
       return { start: true, startJob: true, stop: true, qcHold: true, resume: false, complete: true, changeDrum: true, tooling: true, rewind: true, rework: true, breakdown: true, materialIssue: true, decisionPending: true };
     }
     if (status === "RUNNING_REWIND" || status === "RUNNING_REWORK" || status === "RUNNING") {
@@ -573,18 +603,18 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
           <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
             <div className="grid grid-cols-[1fr_210px] gap-3">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Description / تفصیل</div>
+                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Description </div>
                 <div className="mt-0.5 truncate text-[15px] font-black leading-tight">{jobCard.description}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
                   <div className="truncate">WO: {jobCard.workOrderNo}</div>
-                  <div className="truncate">Operation: {titleCase(jobCard.operation)}</div>
+                  {/* <div className="truncate">Operation: {titleCase(jobCard.operation)}</div> */}
                 </div>
               </div>
 
               <div className="text-left">
                 <div className="flex items-end justify-start gap-2">
                   <div>
-                    <div className="text-[10px] font-bold text-white/75">Progress / پیش رفت</div>
+                    <div className="text-[10px] font-bold text-white/75">Progress </div>
                     <div className="text-[32px] font-black leading-none">{progress}%</div>
                   </div>
                   <div className="pb-1 text-[12px] font-black">
@@ -598,9 +628,9 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
             </div>
 
             <div className="mt-2 grid grid-cols-3 gap-2 text-left">
-              <HeaderMetric label="Order Length / آرڈر لمبائی" value={`${formatQty(jobCard.orderLength)} m`} />
-              <HeaderMetric label="Planned Qty / منصوبہ مقدار" value={formatQty(jobCard.plannedQty)} />
-              <HeaderMetric label=" Size /  سائز" value={jobCard.finishSize} />
+              <HeaderMetric label="Order Length " value={`${formatQty(jobCard.orderLength)} m`} />
+              <HeaderMetric label="Planned Qty" value={formatQty(jobCard.plannedQty)} />
+              <HeaderMetric label=" Size " value={jobCard.finishSize} />
             </div>
           </div>
 

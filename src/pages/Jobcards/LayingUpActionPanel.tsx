@@ -36,13 +36,13 @@ export type ActionCardData = {
 };
 
 export const STANDARD_ACTION_CARDS: readonly ActionCardData[] = [
-  { key: "start", title: "START", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
+  { key: "start", title: "START SETUP", urdu: "شروع", subtitle: "Start setup", tone: "green", icon: LayoutGrid },
   { key: "startJob", title: "START JOB", urdu: "جاب شروع", subtitle: "Begin production", tone: "green2", icon: CheckCircle2 },
   { key: "stop", title: "STOP", urdu: "روکیں", subtitle: "Reason", tone: "red", icon: Siren },
   { key: "qcHold", title: "QC HOLD", urdu: "QC ہولڈ", subtitle: "Inspect", tone: "amber", icon: ShieldCheck },
   { key: "resume", title: "RESUME", urdu: "جاری رکھیں", subtitle: "After hold", tone: "emerald", icon: RotateCcw },
   { key: "complete", title: "COMPLETE", urdu: "جاب مکمل کریں", subtitle: "Complete Job", tone: "green2", icon: CheckCircle2 },
-  { key: "changeDrum", title: "DRUM/Spool", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
+  { key: "changeDrum", title: "Change DRUM/Spool", urdu: "ڈرم تبدیل کریں", subtitle: "Change", tone: "slate", icon: RefreshCw },
   { key: "tooling", title: "TOOLING", urdu: "ٹولنگ", subtitle: "Die / core change", tone: "brown", icon: BookOpenText },
   { key: "rewind", title: "REWIND", urdu: "ری وائنڈ", subtitle: "Approval", tone: "violet", icon: RotateCcw },
   { key: "rework", title: "REWORK", urdu: "ری ورک", subtitle: "Approval", tone: "orange", icon: Plus },
@@ -89,7 +89,7 @@ function ActionCard({ item, onClick, disabled }: { item: ActionCardData; onClick
       <div className="min-w-0">
         <div className="truncate text-[12px] font-black uppercase leading-tight tracking-wide">{item.title}</div>
         <div className="truncate text-[10px] font-bold leading-tight opacity-80">{item.urdu}</div>
-        <div className="mt-0.5 truncate text-[10px] font-bold leading-tight opacity-70">{item.subtitle}</div>
+        {/* <div className="mt-0.5 truncate text-[10px] font-bold leading-tight opacity-70">{item.subtitle}</div> */}
       </div>
     </button>
   );

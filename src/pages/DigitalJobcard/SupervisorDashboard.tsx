@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import jobsData from "../../JsonForTest/jobs.json";
+import { useActiveJobs, type ActiveJob } from "../../hooks/useActiveJobs";
 
 const PROCESS_OPTIONS = [
   "Extrusion",
@@ -11,6 +12,19 @@ const PROCESS_OPTIONS = [
   "Sheathing",
   "Wire Drawing",
 ];
+
+const PROCESS_LABELS: Record<string, string> = {
+  MULTI_WIRE_DRAWING: "Wire Drawing",
+  WIRE_DRAWING: "Wire Drawing",
+  LAYING_UP: "Laying Up",
+  LAYUP: "Laying Up",
+  INSULATION: "Insulation",
+  SHEATHING: "Sheathing",
+  ARMOURING: "Armouring",
+  BEDDING: "Bedding",
+  BUNCHING: "Bunching",
+  EXTRUSION: "Extrusion",
+};
 
 
 
@@ -73,6 +87,22 @@ export default function SupervisorDashboard({  }: Props){
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [jobs, setJobs] = useState<any[]>([]);
+  const { data: activeJobs, isLoading: activeJobsLoading, error: activeJobsError } = useActiveJobs();
+  const processCards = useMemo(() => {
+    if (!activeJobs?.length) return [];
+
+    return activeJobs.map((job: ActiveJob) => ({
+      id: job.id,
+      label: PROCESS_LABELS[job.processName] || job.processName,
+      accent: "from-emerald-50 to-white",
+      jobNumber: job.jobNumber,
+      status: job.status,
+      machineCode: job.machineCode,
+      productDescription: job.productDescription,
+      totalQty: job.totalQty,
+      batches: job.batches,
+    }));
+  }, [activeJobs]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -174,6 +204,62 @@ export default function SupervisorDashboard({  }: Props){
 
       {activeTab === "create" && (
         <>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Active Jobs API</div>
+                <div className="text-sm font-semibold text-slate-700">
+                  {activeJobsLoading
+                    ? "Loading active jobs..."
+                    : activeJobsError
+                      ? "Failed to load active jobs"
+                      : `Fetched ${activeJobs?.length || 0} active jobs`}
+                </div>
+              </div>
+              <div className="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-green-700">
+                {activeJobs?.length || 0} Active
+              </div>
+            </div>
+          </div>
+
+          {processCards.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {processCards.map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  className={`group relative overflow-hidden rounded-[26px] border border-slate-200 bg-gradient-to-br ${card.accent} p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl`}
+                  onClick={() => {
+                    setSelectedProcess(card.label);
+                    setSelectedProduct("");
+                    setProductSearch("");
+                    setSelectedRows([]);
+                    setShowDropdown(false);
+                  }}
+                >
+                  <div className="absolute right-0 top-0 h-24 w-24 -translate-y-6 translate-x-6 rounded-full bg-white/70 transition group-hover:bg-green-50" />
+                  <div className="relative z-10">
+                    <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                      {card.jobNumber}
+                    </div>
+                    <div className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                      {card.label.toUpperCase()}
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-slate-500">
+                      {card.productDescription}
+                    </p>
+                    <div className="mt-4 grid gap-1 text-xs font-semibold text-slate-600">
+                      <div>Status: {card.status}</div>
+                      <div>Machine: {card.machineCode}</div>
+                      <div>Qty: {card.totalQty}</div>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-green-700 transition-all duration-500 group-hover:w-full" />
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="bg-white p-5 rounded-xl shadow grid md:grid-cols-3 gap-4">
             <select
               value={selectedProcess}

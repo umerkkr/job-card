@@ -1,17 +1,24 @@
-const JOB_CARDS = [
-  { id: "drawing", label: "Drawing", accent: "from-emerald-50 to-white" },
-  // { id: "wire-drawing", label: "Wire Drawing", accent: "from-emerald-50 to-white" },
-  { id: "laying-up", label: "Laying Up", accent: "from-teal-50 to-white" },
-  { id: "insulation", label: "Insulation", accent: "from-sky-50 to-white" },
-  { id: "sheathing", label: "Sheathing", accent: "from-indigo-50 to-white" },
-  // { id: "armouring", label: "Armouring", accent: "from-amber-50 to-white" },
-];
+import { useMemo } from "react";
+import { useActiveJobs, type ActiveJob } from "../../hooks/useActiveJobs";
+
+const PROCESS_CARD_MAP: Record<string, { id: string; label: string; accent: string }> = {
+  MULTI_WIRE_DRAWING: { id: "drawing", label: "Drawing", accent: "from-emerald-50 to-white" },
+  WIRE_DRAWING: { id: "drawing", label: "Drawing", accent: "from-emerald-50 to-white" },
+  LAYING_UP: { id: "laying-up", label: "Laying Up", accent: "from-teal-50 to-white" },
+  LAYUP: { id: "laying-up", label: "Laying Up", accent: "from-teal-50 to-white" },
+  INSULATION: { id: "insulation", label: "Insulation", accent: "from-sky-50 to-white" },
+  SHEATHING: { id: "sheathing", label: "Sheathing", accent: "from-indigo-50 to-white" },
+};
 
 type JobData = {
   jobName: string;
   jobId: string;
   machine: string;
   process: string;
+  processName?: string;
+  jobNumber?: string;
+  status?: string;
+  productCode?: string;
   products: any[];
 };
 
@@ -21,6 +28,31 @@ type Props = {
 };
 
 const DigitalJobCard = ({ onCreateJob }: Props) => {
+  const { data: activeJobs } = useActiveJobs();
+
+  const availableCards = useMemo(() => {
+    if (!activeJobs?.length) return [];
+
+    const cards = activeJobs
+      .map((job: ActiveJob) => {
+        const card = PROCESS_CARD_MAP[job.processName];
+        if (!card) return null;
+
+        return {
+          ...card,
+          job,
+        };
+      })
+      .filter(Boolean) as Array<(typeof PROCESS_CARD_MAP)[keyof typeof PROCESS_CARD_MAP] & { job: ActiveJob }>;
+
+    const seen = new Set<string>();
+    return cards.filter((card) => {
+      if (seen.has(card.id)) return false;
+      seen.add(card.id);
+      return true;
+    });
+  }, [activeJobs]);
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f9fa_0%,#eef3f6_100%)] p-2 md:p-4">
       <header className="mx-auto mb-6 max-w-7xl">
@@ -37,17 +69,25 @@ const DigitalJobCard = ({ onCreateJob }: Props) => {
 
       <main className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {JOB_CARDS.map((job) => (
+          {availableCards.length === 0 ? (
+            <div className="rounded-[26px] border border-dashed border-slate-300 bg-white p-8 text-sm font-semibold text-slate-500">
+              No matching job cards were returned by the API.
+            </div>
+          ) : availableCards.map((job) => (
             <button
               key={job.id}
               className={`group relative overflow-hidden rounded-[26px] border border-slate-200 bg-gradient-to-br ${job.accent} p-8 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl`}
               onClick={() =>
                 onCreateJob({
-                  jobName: job.label,
+                  jobName: job.job.jobNumber || job.label,
                   process: job.label,
                   jobId: job.id,
-                  machine: "",
-                  products: [],
+                  machine: job.job.machineCode || "",
+                  processName: job.job.processName,
+                  jobNumber: job.job.jobNumber,
+                  status: job.job.status,
+                  productCode: job.job.productCode,
+                  products: job.job.batches || [],
                 })
               }
             >
@@ -60,7 +100,7 @@ const DigitalJobCard = ({ onCreateJob }: Props) => {
                   {job.label.toUpperCase()}
                 </div>
                 <p className="mt-3 text-sm font-semibold text-slate-500">
-                  Tap to open log
+                  {job.job.jobNumber} · {job.job.productDescription}
                 </p>
               </div>
               <div className="absolute bottom-0 left-0 h-1.5 w-0 bg-green-700 transition-all duration-500 group-hover:w-full" />

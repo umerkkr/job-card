@@ -91,7 +91,6 @@ function TopInfoCard({
         <div className="min-w-0">
           <div className="truncate text-[9px] font-black uppercase leading-none text-slate-500">{label}</div>
           <div className="truncate text-[12px] font-black leading-tight">{value}</div>
-          <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">{sub}</div>
         </div>
       </div>
     </div>
@@ -871,7 +870,6 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
                 <div className="mt-0.5 text-[15px] font-black leading-tight">{jobCard.description}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
                   <div className="truncate">WO: {jobCard.workOrderNo}</div>
-                  <div className="truncate">Machine: {jobCard.machine}</div>
                   <div className="truncate">Operation: {jobCard.operation}</div>
                 </div>
               </div>
@@ -914,7 +912,7 @@ export default function LayingUp({ onBack,data, onLogout }: Props) {
 
           <div className="grid grid-cols-4 gap-2">
             <TopInfoCard label="Machine" value={jobCard.machine} sub={jobCard.operation} icon={Building2} />
-            <TopInfoCard label="Work Order No" value={jobCard.workOrderNo} sub={jobCard.jobName} icon={Clock3} />
+            <TopInfoCard label="Work Order No" value={jobCard.workOrderNo} icon={Clock3} />
             <TopInfoCard label="Size" value={jobCard.size} sub="Cable size" icon={UserRound} />
             <TopInfoCard label="Order Length" value={`${formatQty(jobCard.orderLength)} m`} sub="Planned order length" icon={CheckCircle2} green />
           </div>

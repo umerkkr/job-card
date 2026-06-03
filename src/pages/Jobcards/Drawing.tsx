@@ -257,12 +257,12 @@ function HeaderMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SmallSummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function SmallSummaryCard({ label, value }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
       <div className="text-[9px] font-black uppercase leading-none text-slate-500">{label}</div>
       <div className="truncate text-[12px] font-black leading-tight">{value}</div>
-      {sub && <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">{sub}</div>}
+      {/* {sub && <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">{sub}</div>} */}
     </div>
   );
 }
@@ -493,10 +493,10 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
                       : "Fault / خرابی";
 
   const jobInfoRows: Array<[string, string]> = [
-    ["Inlet Size", jobCard.inletSize],
-    ["Finish Size", jobCard.finishSize],
-    ["Packing Standards", jobCard.packingStandards],
-    ["Total Spool Qty", jobCard.totalSpoolQty],
+    ["Inlet Size / ان لیٹ سائز", jobCard.inletSize],
+    [" Size / فائنل سائز", jobCard.finishSize],
+    ["Packing Standards / پیکنگ اسٹینڈرڈ", jobCard.packingStandards],
+    ["Total Spool Qty / کل سپول مقدار", jobCard.totalSpoolQty],
   ];
 
   return (
@@ -573,22 +573,18 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
           <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
             <div className="grid grid-cols-[1fr_210px] gap-3">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Drawing</div>
-                <div className="mt-0.5 truncate text-[15px] font-black leading-tight">{jobCard.jobName}</div>
+                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Description / تفصیل</div>
+                <div className="mt-0.5 truncate text-[15px] font-black leading-tight">{jobCard.description}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
                   <div className="truncate">WO: {jobCard.workOrderNo}</div>
-                  <div className="truncate">Machine: {jobCard.machine}</div>
                   <div className="truncate">Operation: {titleCase(jobCard.operation)}</div>
-                  <div className="truncate">Batch: {jobCard.batchNo}</div>
-                  <div className="truncate">Customer: {jobCard.customerName}</div>
-                  <div className="truncate">PPD: {jobCard.ppdDate}</div>
                 </div>
               </div>
 
               <div className="text-left">
                 <div className="flex items-end justify-start gap-2">
                   <div>
-                    <div className="text-[10px] font-bold text-white/75">Progress</div>
+                    <div className="text-[10px] font-bold text-white/75">Progress / پیش رفت</div>
                     <div className="text-[32px] font-black leading-none">{progress}%</div>
                   </div>
                   <div className="pb-1 text-[12px] font-black">
@@ -602,17 +598,17 @@ export default function WireDrawing({ onBack, data, onLogout }: Props) {
             </div>
 
             <div className="mt-2 grid grid-cols-3 gap-2 text-left">
-              <HeaderMetric label="Order Length" value={`${formatQty(jobCard.orderLength)} m`} />
-              <HeaderMetric label="Planned Qty" value={formatQty(jobCard.plannedQty)} />
-              <HeaderMetric label="Size" value={jobCard.size} />
+              <HeaderMetric label="Order Length / آرڈر لمبائی" value={`${formatQty(jobCard.orderLength)} m`} />
+              <HeaderMetric label="Planned Qty / منصوبہ مقدار" value={formatQty(jobCard.plannedQty)} />
+              <HeaderMetric label=" Size /  سائز" value={jobCard.finishSize} />
             </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <SmallSummaryCard label="Machine" value={jobCard.machine} sub={jobCard.processLabel} />
-            <SmallSummaryCard label="Actual Qty" value={formatQty(jobCard.actualQty)} sub={`Remaining: ${formatQty(jobCard.remainingQty)}`} />
-            <SmallSummaryCard label="Job No" value={jobCard.jobNumber} sub={jobCard.status} />
-            <SmallSummaryCard label="C.Spec" value={jobCard.cSpec} sub={jobCard.productCode} />
+            <SmallSummaryCard label="Machine / مشین" value={jobCard.machine} sub={jobCard.processLabel} />
+            <SmallSummaryCard label="Work Order No / ورک آرڈر نمبر" value={jobCard.workOrderNo} sub={jobCard.jobName} />
+            <SmallSummaryCard label="Operation / آپریشن" value={titleCase(jobCard.operation)} sub={jobCard.status} />
+            <SmallSummaryCard label="Size / سائز" value={jobCard.finishSize} sub="Finish Size / فائنل سائز" />
           </div>
         </section>
 

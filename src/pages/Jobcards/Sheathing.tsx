@@ -30,6 +30,74 @@ function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
 }
 
+function safeText(value: unknown, fallback = "-") {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+function toNumber(value: unknown, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function formatQty(value: unknown, digits = 2) {
+  const numeric = toNumber(value, 0);
+  return numeric.toLocaleString(undefined, {
+    minimumFractionDigits: numeric % 1 === 0 ? 0 : digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function titleCase(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function extractCableSize(description?: string | null) {
+  const text = safeText(description, "");
+  const sizeMatch = text.match(/(\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?\s*mm²?|\d+(?:\.\d+)?\s*mm²?)/i);
+  return sizeMatch?.[1] ?? "-";
+}
+
+// DUMMY DATA: These fields are required on the Sheathing card,
+// but they are not available in the current API response yet.
+// Replace these values with backend fields when available.
+const DUMMY_SHEATHING_FIELDS = {
+  seqMarking: "SEQ-001",
+  plannedHrs: "3085",
+  inputLot: "-",
+  color: "Black",
+  packingLength: "500 m",
+};
+
+function mapSheathingJob(data?: any) {
+  const product = data?.products?.[0] ?? {};
+  const description = safeText(product.description);
+  const orderLength = toNumber(product.originalQty ?? product.wipPlanQty ?? product.plannedQty, ORDER_LENGTH);
+  const length = toNumber(product.balance ?? product.executedQty ?? product.qty, 0);
+
+  return {
+    jobName: safeText(data?.jobName, "SHEATHING"),
+    workOrderNo: safeText(product.workOrder ?? product.workOrders?.join(", ")),
+    description,
+    machine: safeText(data?.machine),
+    operation: titleCase(safeText(data?.processName ?? product.process ?? data?.process, "Sheathing")),
+    cableSize: extractCableSize(description),
+    orderLength,
+    seqMarking: safeText((product as any)?.seqMarking ?? (product as any)?.sequenceMarking, DUMMY_SHEATHING_FIELDS.seqMarking),
+    plannedHrs: safeText((data as any)?.plannedHrs ?? (data as any)?.plannedHours ?? (product as any)?.plannedHrs ?? (product as any)?.plannedHours, DUMMY_SHEATHING_FIELDS.plannedHrs),
+    inputLot: safeText((product as any)?.inputLot ?? (product as any)?.inputLotDrum ?? (product as any)?.inputDrum, DUMMY_SHEATHING_FIELDS.inputLot),
+    length,
+    color: safeText((product as any)?.color, DUMMY_SHEATHING_FIELDS.color),
+    packingLength: safeText(product.packingLength, DUMMY_SHEATHING_FIELDS.packingLength),
+  };
+}
+
 function Modal({ title, sub, children, onClose }: { title: string; sub: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-3">
@@ -59,6 +127,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 }
 
 export default function Sheathing({ onBack, data, onLogout }: Props) {
+  console.log("Rendering Sheathing with data:", data);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
@@ -81,7 +150,10 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
 
   const selectedInputDrum = inputDrum || INPUT_DRUM_LOV[0];
   const selectedOutputDrum = outputDrum || OUTPUT_DRUM_LOV[0];
-  const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
+  const jobCard = useMemo(() => mapSheathingJob(data), [data]);
+  const orderLength = jobCard.orderLength || ORDER_LENGTH;
+  const displayProducedLength = producedLength || jobCard.length || 0;
+  const progress = Math.max(0, Math.min(100, Math.round((displayProducedLength / orderLength) * 100)));
   const statusText = useMemo(() => {
     switch (status) {
       case "SETUP":
@@ -339,12 +411,11 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
   <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
     <div className="grid grid-cols-[1fr_210px] gap-3">
       <div className="min-w-0">
-        <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
-        <div className="mt-0.5 text-[15px] font-black leading-tight">{data?.jobName || "SHEATHING"}</div>
+        <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Description</div>
+        <div className="mt-0.5 text-[15px] font-black leading-tight">{jobCard.description}</div>
         <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
-          <div className="truncate">Job: {data?.jobId || "SHE-001"}</div>
-          <div className="truncate">Batch: {data?.process || "Sheathing"}</div>
-          <div className="truncate">WO: {data?.machine || "M-92"}</div>
+          <div className="truncate">WO: {jobCard.workOrderNo}</div>
+          <div className="truncate">Operation: {jobCard.operation}</div>
         </div>
       </div>
 
@@ -354,7 +425,7 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
             <div className="text-[10px] font-bold text-white/75">Progress</div>
             <div className="text-[32px] font-black leading-none">{progress}%</div>
           </div>
-          <div className="pb-1 text-[12px] font-black">{producedLength.toFixed(1)} m / {ORDER_LENGTH} m</div>
+          <div className="pb-1 text-[12px] font-black">{formatQty(displayProducedLength)} m / {formatQty(orderLength)} m</div>
         </div>
         <div className="mt-2 h-3 rounded-full border border-white/30 bg-white/25 p-0.5">
           <div className="h-full rounded-full bg-lime-400" style={{ width: `${progress}%` }} />
@@ -366,19 +437,19 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
       <div className="rounded-xl bg-white/10 px-2 py-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
-          <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
+          <span className="text-[13px] font-black">{formatQty(jobCard.orderLength)} m</span>
         </div>
       </div>
       <div className="rounded-xl bg-white/10 px-2 py-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
-          <span className="text-[13px] font-black">3085</span>
+          <span className="text-[13px] font-black">{jobCard.plannedHrs}</span>
         </div>
       </div>
       <div className="rounded-xl bg-white/10 px-2 py-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
-          <span className="text-[13px] font-black">50 mm²</span>
+          <span className="text-[13px] font-black">{jobCard.cableSize}</span>
         </div>
       </div>
     </div>
@@ -387,23 +458,19 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
   <div className="grid grid-cols-4 gap-2">
     <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
       <div className="text-[9px] font-black uppercase leading-none text-slate-500">Machine</div>
-      <div className="truncate text-[12px] font-black leading-tight">M-92</div>
-      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Sheathing</div>
+      <div className="truncate text-[12px] font-black leading-tight">{jobCard.machine}</div>
     </div>
     <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
-      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Operator</div>
-      <div className="truncate text-[12px] font-black leading-tight">Ali Raza</div>
-      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Supervisor: Ahmed Khan</div>
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">WO No</div>
+      <div className="truncate text-[12px] font-black leading-tight">{jobCard.workOrderNo}</div>
     </div>
     <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
-      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Shift</div>
-      <div className="truncate text-[12px] font-black leading-tight">Shift A</div>
-      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">18:11</div>
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Cable Size</div>
+      <div className="truncate text-[12px] font-black leading-tight">{jobCard.cableSize}</div>
     </div>
     <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
-      <div className="text-[9px] font-black uppercase leading-none text-slate-500">QC</div>
-      <div className="truncate text-[12px] font-black leading-tight">OK</div>
-      <div className="truncate text-[10px] font-semibold leading-tight text-slate-500">Approved</div>
+      <div className="text-[9px] font-black uppercase leading-none text-slate-500">Order Length</div>
+      <div className="truncate text-[12px] font-black leading-tight">{formatQty(jobCard.orderLength)} m</div>
     </div>
   </div>
 </section>
@@ -418,14 +485,11 @@ export default function Sheathing({ onBack, data, onLogout }: Props) {
           <div className="border-t border-slate-200 p-2 pt-1.5">
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
-                ["Input Lot / Drum No", inputDrumValue || "-"],
-                ["Length (m)", producedLength ? producedLength.toFixed(1) : "-"],
-                ["Color", data?.color || "Black"],
-                // ["Lay Length (m)", data?.layLength || String(ORDER_LENGTH)],
-                // ["P/P tape size", data?.tapeSize || "4 mm"],
-                // ["Overlap", data?.overlap || "4 mm"],
-                // ["Lay direction", data?.layDirection || "RH"],
-                ["OD", data?.od || "24.25 mm"],
+                ["Seq Marking", jobCard.seqMarking],
+                ["Input Lot", jobCard.inputLot],
+                ["Length", `${formatQty(displayProducedLength)} m`],
+                ["Color", jobCard.color],
+                ["Packing Length", jobCard.packingLength],
               ].map(([label, value]) => <InfoBox key={label} label={label} value={value} />)}
             </div>
           </div>

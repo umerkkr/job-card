@@ -131,6 +131,83 @@ function fieldClassName() {
   return "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-black outline-none focus:border-emerald-400";
 }
 
+function safeText(value: unknown, fallback = "-") {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+function toNumber(value: unknown, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function formatQty(value: unknown, digits = 2) {
+  const numeric = toNumber(value, 0);
+  return numeric.toLocaleString(undefined, {
+    minimumFractionDigits: numeric % 1 === 0 ? 0 : digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function titleCase(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function extractSize(description?: string | null) {
+  const text = safeText(description, "");
+  const sizeMatch = text.match(/([0-9.]+\s*mm²?)/i);
+  return sizeMatch?.[1] ?? "-";
+}
+
+// DUMMY DATA: These fields are required on the Laying Up card,
+// but they are not available in the current API response yet.
+// Replace these values with backend fields when available.
+const DUMMY_LAYING_UP_FIELDS = {
+  plannedHrs: "3085",
+  inputLotDrum: "-",
+  color: "1",
+  packingLength: "500 m",
+  layLength: "145 m",
+  pipTapeSize: "4 mm",
+  overlap: "4 mm",
+  layDirection: "RH",
+  odMm: "24.25 mm",
+};
+
+function mapLayingUpJob(data?: any) {
+  const product = data?.products?.[0] ?? {};
+  const description = safeText(product.description);
+  const workOrderNo = safeText(product.workOrder ?? product.workOrders?.join(", "));
+  const orderLength = toNumber(product.originalQty ?? product.wipPlanQty ?? product.plannedQty, ORDER_LENGTH);
+  const length = toNumber(product.balance ?? product.executedQty ?? product.qty, 0);
+
+  return {
+    jobName: safeText(data?.jobName, "LAYING UP"),
+    description,
+    workOrderNo,
+    machine: safeText(data?.machine),
+    operation: titleCase(safeText(data?.processName ?? product.process ?? data?.process, "Laying Up")),
+    size: extractSize(description),
+    orderLength,
+    plannedHrs: safeText((data as any)?.plannedHrs ?? (data as any)?.plannedHours ?? (product as any)?.plannedHrs ?? (product as any)?.plannedHours, DUMMY_LAYING_UP_FIELDS.plannedHrs),
+    inputLotDrum: safeText((product as any)?.inputLotDrum ?? (product as any)?.inputDrum, DUMMY_LAYING_UP_FIELDS.inputLotDrum),
+    length,
+    color: safeText((product as any)?.color, DUMMY_LAYING_UP_FIELDS.color),
+    packingLength: safeText(product.packingLength, DUMMY_LAYING_UP_FIELDS.packingLength),
+    layLength: safeText((product as any)?.layLength, DUMMY_LAYING_UP_FIELDS.layLength),
+    pipTapeSize: safeText((product as any)?.pipTapeSize, DUMMY_LAYING_UP_FIELDS.pipTapeSize),
+    overlap: safeText((product as any)?.overlap, DUMMY_LAYING_UP_FIELDS.overlap),
+    layDirection: safeText((product as any)?.layDirection, DUMMY_LAYING_UP_FIELDS.layDirection),
+    odMm: safeText((product as any)?.odMm ?? (product as any)?.od, DUMMY_LAYING_UP_FIELDS.odMm),
+  };
+}
+
 type DrumPickerProps = {
   label: string;
   helper?: string;
@@ -196,7 +273,7 @@ function DrumPicker({ label, helper, items, value, onChange }: DrumPickerProps) 
   );
 }
 
-export default function LayingUp({ onBack, onLogout }: Props) {
+export default function LayingUp({ onBack,data, onLogout }: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [status, setStatus] = useState<Status>("READY");
@@ -221,6 +298,12 @@ export default function LayingUp({ onBack, onLogout }: Props) {
   const [outputDrumValue, setOutputDrumValue] = useState<string[]>([]);
   const [liveClock, setLiveClock] = useState(() => new Date());
   const [jobSeconds, setJobSeconds] = useState(0);
+
+  console.log(data,"data")
+
+  const jobCard = useMemo(() => mapLayingUpJob(data), [data]);
+  const orderLength = jobCard.orderLength || ORDER_LENGTH;
+  const displayProducedLength = producedLength || jobCard.length || 0;
 
   const statusText = useMemo(() => {
     switch (status) {
@@ -252,7 +335,7 @@ export default function LayingUp({ onBack, onLogout }: Props) {
     }
   }, [status]);
 
-  const progress = Math.max(0, Math.min(100, Math.round((producedLength / ORDER_LENGTH) * 100)));
+  const progress = Math.max(0, Math.min(100, Math.round((displayProducedLength / orderLength) * 100)));
   const setupTimeLabel = `${String(Math.floor(setupSeconds / 60)).padStart(2, "0")}:${String(setupSeconds % 60).padStart(2, "0")}`;
   const liveClockLabel = liveClock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const isStartJobWorkflow = workflow === "startJob";
@@ -784,12 +867,12 @@ export default function LayingUp({ onBack, onLogout }: Props) {
           <div className="rounded-2xl bg-[linear-gradient(135deg,#0d8c35_0%,#0a6f2b_100%)] p-3 text-white shadow-lg">
             <div className="grid grid-cols-[1fr_210px] gap-3">
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Product</div>
-                <div className="mt-0.5 text-[15px] font-black leading-tight">CU/PVC/SWA/PVC 3x50 MM² 600/1000 V</div>
+                <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">Description</div>
+                <div className="mt-0.5 text-[15px] font-black leading-tight">{jobCard.description}</div>
                 <div className="mt-2 grid gap-x-3 gap-y-0.5 text-[11px] font-bold sm:grid-cols-3">
-                  <div className="truncate">Job: PC-03447/2526</div>
-                  <div className="truncate">Batch: PCF-BED-150-1-EXTD26-180565</div>
-                  <div className="truncate">WO: X-06357/2526</div>
+                  <div className="truncate">WO: {jobCard.workOrderNo}</div>
+                  <div className="truncate">Machine: {jobCard.machine}</div>
+                  <div className="truncate">Operation: {jobCard.operation}</div>
                 </div>
               </div>
 
@@ -799,7 +882,7 @@ export default function LayingUp({ onBack, onLogout }: Props) {
                     <div className="text-[10px] font-bold text-white/75">Progress</div>
                     <div className="text-[32px] font-black leading-none">{progress}%</div>
                   </div>
-                  <div className="pb-1 text-[12px] font-black">{producedLength.toFixed(1)} m / {ORDER_LENGTH} m</div>
+                  <div className="pb-1 text-[12px] font-black">{formatQty(displayProducedLength)} m / {formatQty(orderLength)} m</div>
                 </div>
                 <div className="mt-2 h-3 rounded-full border border-white/30 bg-white/25 p-0.5">
                   <div className="h-full rounded-full bg-lime-400" style={{ width: `${progress}%` }} />
@@ -811,29 +894,29 @@ export default function LayingUp({ onBack, onLogout }: Props) {
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[9px] font-bold text-white/70">Order Length / آرڈر لمبائی</span>
-                  <span className="text-[13px] font-black">{ORDER_LENGTH} m</span>
+                  <span className="text-[13px] font-black">{formatQty(jobCard.orderLength)} m</span>
                 </div>
               </div>
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[9px] font-bold text-white/70">Planned Hours / منصوبہ بند گھنٹے</span>
-                  <span className="text-[13px] font-black">3085</span>
+                  <span className="text-[13px] font-black">{jobCard.plannedHrs}</span>
                 </div>
               </div>
               <div className="rounded-xl bg-white/10 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[9px] font-bold text-white/70">Size / سائز</span>
-                  <span className="text-[13px] font-black">50 mm²</span>
+                  <span className="text-[13px] font-black">{jobCard.size}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <TopInfoCard label="Machine" value="SIPOLAS" sub="Extrusion" icon={Building2} />
-            <TopInfoCard label="Shift" value="Shift A" sub="18:11" icon={Clock3} />
-            <TopInfoCard label="Operator" value="Ali Raza" sub="Supervisor: Ahmed Khan" icon={UserRound} />
-            <TopInfoCard label="QC" value="OK" sub="Approved" icon={CheckCircle2} green />
+            <TopInfoCard label="Machine" value={jobCard.machine} sub={jobCard.operation} icon={Building2} />
+            <TopInfoCard label="Work Order No" value={jobCard.workOrderNo} sub={jobCard.jobName} icon={Clock3} />
+            <TopInfoCard label="Size" value={jobCard.size} sub="Cable size" icon={UserRound} />
+            <TopInfoCard label="Order Length" value={`${formatQty(jobCard.orderLength)} m`} sub="Planned order length" icon={CheckCircle2} green />
           </div>
         </section>
 
@@ -848,14 +931,15 @@ export default function LayingUp({ onBack, onLogout }: Props) {
           <div className="border-t border-slate-200 p-2 pt-1.5">
             <div className="grid grid-cols-4 gap-1.5 md:grid-cols-8">
               {[
-                ["Input Lot / Drum No", "-"],
-                ["Length (m)", "148"],
-                ["Color", "1"],
-                ["Lay Length (m)", "145"],
-                ["P/P tape size", "4 mm"],
-                ["Overlap", "4 mm"],
-                ["Lay direction", "RH"],
-                ["OD", "24.25 mm"],
+                ["Input Lot Drum", jobCard.inputLotDrum],
+                ["Length", `${formatQty(displayProducedLength)} m`],
+                ["Color", jobCard.color],
+                ["Packing Length", jobCard.packingLength],
+                ["Lay Length", jobCard.layLength],
+                ["PIP Tape Size", jobCard.pipTapeSize],
+                ["Overlap", jobCard.overlap],
+                ["Lay Direction", jobCard.layDirection],
+                ["OD (mm)", jobCard.odMm],
               ].map(([a, b]) => (
                 <div key={a} className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5">
                   <div className="truncate text-[9px] font-black text-slate-500">{a}</div>
